@@ -1,8 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
-/* =========================
-   STOPS
-========================= */
+const BASE_URL = import.meta.env.VITE_API_URL;
 
 export const getStops = async () => {
   const res = await fetch(`${BASE_URL}/api/stops`);
