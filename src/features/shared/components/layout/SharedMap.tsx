@@ -22,6 +22,7 @@ type SharedMapProps = {
     longitude: number;
   };
   initialZoom?: number;
+  bearing?: number;
   onRightClick?: (coords: { latitude: number; longitude: number }) => void;
 };
 
@@ -29,6 +30,7 @@ export default function SharedMap({
   stops = [],
   initialCenter,
   initialZoom = 12,
+  bearing = 0,
   onRightClick,
 }: SharedMapProps) {
   const mapRef = useRef<MapRef>(null);
@@ -37,6 +39,7 @@ export default function SharedMap({
     latitude: initialCenter.latitude,
     longitude: initialCenter.longitude,
     zoom: initialZoom,
+    bearing: bearing,
   });
 
   useEffect(() => {
@@ -44,8 +47,9 @@ export default function SharedMap({
       latitude: initialCenter.latitude,
       longitude: initialCenter.longitude,
       zoom: initialZoom,
+      bearing: bearing,
     });
-  }, [initialCenter, initialZoom]);
+  }, [initialCenter, initialZoom,bearing]);
 
   const handleRightClick = (event: MapLayerMouseEvent) => {
     event.preventDefault();

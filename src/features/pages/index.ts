@@ -1,2 +1,2 @@
-export * from './Landing';
 export * from './Operator';
+export * from './Admin';

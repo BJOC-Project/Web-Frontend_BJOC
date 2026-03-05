@@ -7,13 +7,12 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ role }: SidebarProps) {
-  const linkStyle = ({ isActive }: { isActive: boolean }) => ({
-    padding: "12px 16px",
-    borderRadius: "8px",
-    textDecoration: "none",
-    color: "white",
-    backgroundColor: isActive ? "#2563eb" : "transparent",
-  });
+const linkStyle = ({ isActive }: { isActive: boolean }) =>
+  `block px-4 py-3 rounded-lg transition 
+   ${isActive 
+      ? "bg-white text-black font-semibold" 
+      : "text-white hover:bg-green-900"
+   }`;
 
   const operatorNav = [
     { label: "Dashboard", path: "/operator/dashboard" },
@@ -43,9 +42,9 @@ export default function Sidebar({ role }: SidebarProps) {
     <aside
       style={{
         width: "260px",
-        backgroundColor: "#111827",
+        backgroundColor: "#104027",
         color: "white",
-        padding: "20px",
+        padding: "10px",
         display: "flex",
         flexDirection: "column",
         gap: "12px",
@@ -54,7 +53,7 @@ export default function Sidebar({ role }: SidebarProps) {
       <h2 style={{ marginBottom: "20px" }}>{title}</h2>
 
       {navItems.map((item) => (
-        <NavLink key={item.path} to={item.path} style={linkStyle}>
+        <NavLink key={item.path} to={item.path} className={linkStyle}>
           {item.label}
         </NavLink>
       ))}

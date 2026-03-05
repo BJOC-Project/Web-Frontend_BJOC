@@ -1,18 +1,12 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { getUserInfo } from "@/features/shared/services/secureTokenManager";
 
 type Role = "operator" | "admin";
 
-type User = {
-  id: number;
-  name: string;
-  role: Role;
-};
 
 export default function ProtectedRoute() {
   const location = useLocation();
-
-  const storedUser = localStorage.getItem("user");
-  const user: User | null = storedUser ? JSON.parse(storedUser) : null;
+  const user = getUserInfo();
 
   if (!user) {
     return <Navigate to="/" replace />;

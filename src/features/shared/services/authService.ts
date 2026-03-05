@@ -1,15 +1,15 @@
-import api from "./api";
+import axios from "axios";
+
+const API = "http://localhost:5000/api";
 
 export const authService = {
-  login: (data: { email: string; password: string }) => {
-    return api.post("/auth/login", data);
+
+  async login(payload: { email: string; password: string }) {
+
+    const res = await axios.post(`${API}/auth/login`, payload);
+
+    return res.data;
+
   },
 
-  logout: () => {
-    return api.post("/auth/logout");
-  },
-
-  getProfile: () => {
-    return api.get("/auth/me");
-  },
 };
