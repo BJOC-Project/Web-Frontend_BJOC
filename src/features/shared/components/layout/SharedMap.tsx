@@ -15,8 +15,17 @@ type Stop = {
   name?: string;
 };
 
+type Vehicle = {
+  vehicle_id: string;
+  latitude: number;
+  longitude: number;
+  plate_number?: string;
+  driver?: string;
+};
+
 type SharedMapProps = {
   stops?: Stop[];
+  vehicles?: Vehicle[];
   initialCenter: {
     latitude: number;
     longitude: number;
@@ -28,11 +37,13 @@ type SharedMapProps = {
 
 export default function SharedMap({
   stops = [],
+  vehicles = [],
   initialCenter,
   initialZoom = 12,
   bearing = 0,
   onRightClick,
 }: SharedMapProps) {
+
   const mapRef = useRef<MapRef>(null);
 
   const [viewState, setViewState] = useState({
@@ -49,7 +60,7 @@ export default function SharedMap({
       zoom: initialZoom,
       bearing: bearing,
     });
-  }, [initialCenter, initialZoom,bearing]);
+  }, [initialCenter, initialZoom, bearing]);
 
   const handleRightClick = (event: MapLayerMouseEvent) => {
     event.preventDefault();
@@ -60,10 +71,9 @@ export default function SharedMap({
     });
   };
 
-  // ✅ Smooth zoom using flyTo
-  const handleMarkerClick = (stop: Stop) => {
+  const flyToLocation = (lat: number, lng: number) => {
     mapRef.current?.flyTo({
-      center: [stop.longitude, stop.latitude],
+      center: [lng, lat],
       zoom: 15,
       duration: 800,
     });
@@ -71,6 +81,7 @@ export default function SharedMap({
 
   return (
     <div className="relative w-full h-full">
+
       <Map
         ref={mapRef}
         {...viewState}
@@ -82,6 +93,7 @@ export default function SharedMap({
       >
         <NavigationControl position="top-left" />
 
+        {/* Stops */}
         {stops.map((stop, index) => (
           <Marker
             key={stop.id || index}
@@ -90,12 +102,11 @@ export default function SharedMap({
             anchor="bottom"
           >
             <div
-              onClick={() => handleMarkerClick(stop)}
+              onClick={() => flyToLocation(stop.latitude, stop.longitude)}
               className="flex flex-col items-center cursor-pointer"
             >
               <MapPin className="text-red-600 w-6 h-6 drop-shadow-lg hover:scale-110 transition" />
 
-              {/* Show label only when zoom >= 15 */}
               {viewState.zoom >= 15 && stop.name && (
                 <span className="text-xs bg-white px-2 py-1 rounded shadow mt-1 whitespace-nowrap">
                   {stop.name}
@@ -104,6 +115,31 @@ export default function SharedMap({
             </div>
           </Marker>
         ))}
+
+        {/* Vehicles (Driver Locations) */}
+        {vehicles.map((vehicle) => (
+          <Marker
+            key={vehicle.vehicle_id}
+            latitude={vehicle.latitude}
+            longitude={vehicle.longitude}
+            anchor="bottom"
+          >
+            <div
+              onClick={() => flyToLocation(vehicle.latitude, vehicle.longitude)}
+              className="flex flex-col items-center cursor-pointer"
+            >
+              <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-md"></div>
+
+              {viewState.zoom >= 14 && (
+                <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded shadow mt-1 whitespace-nowrap">
+                  {vehicle.plate_number || "Vehicle"}
+                  {vehicle.driver ? ` • ${vehicle.driver}` : ""}
+                </span>
+              )}
+            </div>
+          </Marker>
+        ))}
+
       </Map>
     </div>
   );

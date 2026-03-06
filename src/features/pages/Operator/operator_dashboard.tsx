@@ -14,51 +14,72 @@ import {
 import SharedMap from "@/features/shared/components/layout/SharedMap";
 
 const COLORS = ["#2563eb", "#16a34a", "#f59e0b", "#ef4444"];
-export default OperatorDashboard;
+
 export function OperatorDashboard() {
+
   const [vehicles, setVehicles] = useState<any[]>([]);
+  const [vehicleLocations, setVehicleLocations] = useState<any[]>([]);
   const [fleetSummary, setFleetSummary] = useState<any>({});
   const [stopStats, setStopStats] = useState<any[]>([]);
   const [loadSummary, setLoadSummary] = useState<any[]>([]);
   const [activeStops, setActiveStops] = useState<any[]>([]);
   const [overall, setOverall] = useState<any>({});
+
   const defaultCenter = {
     latitude: 14.438853366233266,
     longitude: 120.9607039176618,
   };
 
-
   useEffect(() => {
     loadData();
+
+    // Refresh vehicle locations every 3 seconds
+    const interval = setInterval(loadVehicleLocations, 3000);
+
+    return () => clearInterval(interval);
   }, []);
 
   async function loadData() {
-    const fleet = await operatorService.getFleetSummary();
-    setFleetSummary(fleet);
+    try {
 
-    const jeeps = await operatorService.getJeepneys();
-    setVehicles(jeeps);
+      const fleet = await operatorService.getFleetSummary();
+      setFleetSummary(fleet);
 
-    const stops = await operatorService.getStopPopularity();
-    setStopStats(stops);
+      const jeeps = await operatorService.getJeepneys();
+      setVehicles(jeeps);
 
-    const loads = await operatorService.getLoadSummary();
-    setLoadSummary(loads);
+      const stops = await operatorService.getStopPopularity();
+      setStopStats(stops);
 
-    const active = await operatorService.getActiveStops();
-    setActiveStops(active);
+      const loads = await operatorService.getLoadSummary();
+      setLoadSummary(loads);
 
-    const overall = await operatorService.getOverallSummary();
-    setOverall(overall);
+      const active = await operatorService.getActiveStops();
+      setActiveStops(active);
+
+      const overall = await operatorService.getOverallSummary();
+      setOverall(overall);
+
+      await loadVehicleLocations();
+
+    } catch (error) {
+      console.error("Dashboard load error:", error);
+    }
   }
 
+  async function loadVehicleLocations() {
+    try {
+      const locations = await operatorService.getVehicleLocations();
+      setVehicleLocations(locations);
+    } catch (error) {
+      console.error("Vehicle location load error:", error);
+    }
+  }
 
   return (
     <div className="p-6 space-y-6">
 
-      {/* 
-      //Overall Summary 
-      */}
+      {/* Overall Summary */}
       <div className="grid grid-cols-4 gap-4">
         <SummaryCard title="Trips Today" value={overall.trips_today} />
         <SummaryCard title="Passengers Today" value={overall.passengers_today} />
@@ -75,6 +96,7 @@ export function OperatorDashboard() {
             initialCenter={defaultCenter}
             bearing={100}
             initialZoom={11.5}
+            vehicles={vehicleLocations}
           />
         </div>
       </div>
@@ -109,9 +131,10 @@ export function OperatorDashboard() {
               <tr key={i} className="border-b">
                 <td>
                   <span
-                    className={`h-3 w-3 rounded-full inline-block ${v.is_online ? "bg-green-500" : "bg-gray-400"
-                      }`}
-                  ></span>
+                    className={`h-3 w-3 rounded-full inline-block ${
+                      v.is_online ? "bg-green-500" : "bg-gray-400"
+                    }`}
+                  />
                 </td>
                 <td>{v.plate}</td>
                 <td>{v.driver}</td>
@@ -127,9 +150,7 @@ export function OperatorDashboard() {
 
       <div className="grid grid-cols-2 gap-6">
 
-        {/* 
-        //Passenger Selected Stops Percentage 
-        */}
+        {/* Passenger Selected Stops */}
         <div className="bg-white shadow rounded-xl p-4">
           <h2 className="text-lg font-semibold mb-4">
             Passenger Selected Stops
@@ -171,11 +192,10 @@ export function OperatorDashboard() {
             </BarChart>
           </ResponsiveContainer>
         </div>
+
       </div>
 
-      {/* 
-      *Active Stops 
-      */}
+      {/* Active Stops */}
       <div className="bg-white shadow rounded-xl p-4">
         <h2 className="text-lg font-semibold mb-4">Active Stops</h2>
 
@@ -191,6 +211,7 @@ export function OperatorDashboard() {
           ))}
         </div>
       </div>
+
     </div>
   );
 }

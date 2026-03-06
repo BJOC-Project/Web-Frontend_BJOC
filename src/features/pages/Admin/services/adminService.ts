@@ -3,22 +3,22 @@ import api from "@/features/shared/services/api";
 export const adminService = {
 
     async getSystemSummary() {
-        const res = await api.get("/admin/dashboard/summary");
+        const res = await api.get("/api/admin/dashboard/summary");
         return res.data;
     },
 
     async getOperatorStats() {
-        const res = await api.get("/admin/dashboard/operators");
+        const res = await api.get("/api/admin/dashboard/operators");
         return res.data;
     },
 
     async getVehicleStats() {
-        const res = await api.get("/admin/dashboard/vehicles");
+        const res = await api.get("/api/admin/dashboard/vehicles");
         return res.data;
     },
 
     async getRecentActivity() {
-        const res = await api.get("/admin/dashboard/activity");
+        const res = await api.get("/api/admin/dashboard/activity");
         return res.data;
     },
 

@@ -109,4 +109,13 @@ export const operatorService = {
     return res.data;
   },
 
+  /* ---------------------------
+     VEHICLE LOCATIONS (MAP)
+  --------------------------- */
+
+  async getVehicleLocations() {
+    const res = await api.get("/operator/vehicle-locations");
+    return res.data;
+  },
+
 };
