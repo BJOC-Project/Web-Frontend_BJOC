@@ -3,7 +3,7 @@ import Map, {
   NavigationControl,
   type MapLayerMouseEvent,
 } from "react-map-gl";
-import { useState, useEffect, useRef } from "react";
+import { useRef, useState } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { MapPin } from "lucide-react";
 import type { MapRef } from "react-map-gl";
@@ -45,22 +45,7 @@ export default function SharedMap({
 }: SharedMapProps) {
 
   const mapRef = useRef<MapRef>(null);
-
-  const [viewState, setViewState] = useState({
-    latitude: initialCenter.latitude,
-    longitude: initialCenter.longitude,
-    zoom: initialZoom,
-    bearing: bearing,
-  });
-
-  useEffect(() => {
-    setViewState({
-      latitude: initialCenter.latitude,
-      longitude: initialCenter.longitude,
-      zoom: initialZoom,
-      bearing: bearing,
-    });
-  }, [initialCenter, initialZoom, bearing]);
+  const [zoom, setZoom] = useState(initialZoom);
 
   const handleRightClick = (event: MapLayerMouseEvent) => {
     event.preventDefault();
@@ -79,13 +64,28 @@ export default function SharedMap({
     });
   };
 
+  // Reset camera to default page position
+  const resetCamera = () => {
+    mapRef.current?.flyTo({
+      center: [initialCenter.longitude, initialCenter.latitude],
+      zoom: initialZoom,
+      bearing: bearing,
+      duration: 800,
+    });
+  };
+
   return (
     <div className="relative w-full h-full">
 
       <Map
         ref={mapRef}
-        {...viewState}
-        onMove={(evt) => setViewState(evt.viewState)}
+        initialViewState={{
+          latitude: initialCenter.latitude,
+          longitude: initialCenter.longitude,
+          zoom: initialZoom,
+          bearing: bearing,
+        }}
+        onMove={(e) => setZoom(e.viewState.zoom)}
         style={{ width: "100%", height: "100%" }}
         mapStyle="mapbox://styles/mapbox/streets-v12"
         mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
@@ -107,7 +107,7 @@ export default function SharedMap({
             >
               <MapPin className="text-red-600 w-6 h-6 drop-shadow-lg hover:scale-110 transition" />
 
-              {viewState.zoom >= 15 && stop.name && (
+              {zoom >= 15 && stop.name && (
                 <span className="text-xs bg-white px-2 py-1 rounded shadow mt-1 whitespace-nowrap">
                   {stop.name}
                 </span>
@@ -116,7 +116,7 @@ export default function SharedMap({
           </Marker>
         ))}
 
-        {/* Vehicles (Driver Locations) */}
+        {/* Vehicles */}
         {vehicles.map((vehicle) => (
           <Marker
             key={vehicle.vehicle_id}
@@ -128,19 +128,27 @@ export default function SharedMap({
               onClick={() => flyToLocation(vehicle.latitude, vehicle.longitude)}
               className="flex flex-col items-center cursor-pointer"
             >
-              <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-md"></div>
-
-              {viewState.zoom >= 14 && (
-                <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded shadow mt-1 whitespace-nowrap">
+              {zoom >= 15 && (
+                <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded shadow mb-1 whitespace-nowrap">
                   {vehicle.plate_number || "Vehicle"}
                   {vehicle.driver ? ` • ${vehicle.driver}` : ""}
                 </span>
               )}
+
+              <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-md"></div>
             </div>
           </Marker>
         ))}
-
       </Map>
+
+      {/* Reset Map Button */}
+      <button
+        onClick={resetCamera}
+        className="absolute top-3 right-3 bg-white shadow-lg px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition"
+      >
+        Reset View
+      </button>
+
     </div>
   );
 }

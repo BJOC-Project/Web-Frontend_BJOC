@@ -8,7 +8,7 @@ import {
   Settings,
   ClipboardList,
   Car,
-  UserCog
+  // UserCog
 } from "lucide-react";
 
 type Role = "admin" | "operator";
@@ -37,7 +37,7 @@ export default function Sidebar({ role }: SidebarProps) {
   const adminNav = [
     { label: "Dashboard Overview", path: "/admin/dashboard", icon: <LayoutDashboard size={16} /> },
     { label: "User Management", path: "/admin/users", icon: <Users size={16} /> },
-    { label: "Operator Management", path: "/admin/operators", icon: <UserCog size={16} /> },
+    // { label: "Operator Management", path: "/admin/operators", icon: <UserCog size={16} /> },
     { label: "Driver & Vehicle Oversight", path: "/admin/drivers-vehicles", icon: <Car size={16} /> },
     { label: "Route & Stop Management", path: "/admin/routes", icon: <Map size={16} /> },
     { label: "System Reports", path: "/admin/reports", icon: <ClipboardList size={16} /> },

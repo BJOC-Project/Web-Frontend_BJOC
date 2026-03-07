@@ -1,6 +1,6 @@
 import { RouterProvider, createBrowserRouter, Navigate } from "react-router-dom";
 import { OperatorDashboard, OperatorManageRoutes2, OperatorDriversVehicles } from "@/features/pages/Operator";
-import { AdminDashboard, AdminDriverManagement } from "@/features/pages/Admin"
+import { AdminDashboard, AdminDriverManagement, AdminPassengerManagement, AdminDriverVehicleOversight } from "@/features/pages/Admin"
 import ProtectedRoute from "@/features/shared/ProtectedRoute";
 import MainLayout from "@/features/shared/components/layout/MainLayout";
 import { LoginPage } from "@/features/pages/auth/login/LoginPage";
@@ -46,9 +46,9 @@ const router = createBrowserRouter([
             children: [
               { index: true, element: <Navigate to="dashboard" replace /> },
               { path: "dashboard", element: <AdminDashboard/> },
-              { path: "users", element: <div>User Management</div> },
-              { path: "operators", element: <AdminDriverManagement/> },
-              { path: "drivers-vehicles", element: <div>Driver & Vehicle Oversight</div> },
+              { path: "users", element: <AdminPassengerManagement/> },
+              // { path: "operators", element: <AdminDriverManagement/> },
+              { path: "drivers-vehicles", element: <AdminDriverVehicleOversight/> },
               { path: "routes", element: <div>Route & Stop Management</div> },
               { path: "reports", element: <div>System Reports</div> },
               { path: "analytics", element: <div>System Analytics</div> },

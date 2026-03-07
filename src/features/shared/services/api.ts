@@ -6,37 +6,22 @@ const api = axios.create({
   withCredentials: true,
 });
 
-/* =========================
-   REQUEST INTERCEPTOR
-   Attach JWT token
-========================= */
-api.interceptors.request.use(
-  (config) => {
-    const token = getAccessToken();
+api.interceptors.request.use((config) => {
+  const token = getAccessToken();
 
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
 
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+  return config;
+});
 
-
-/* =========================
-   RESPONSE INTERCEPTOR
-   Handle auth errors
-========================= */
 api.interceptors.response.use(
   (response) => response,
-
   (error) => {
 
     if (error.response?.status === 401) {
       clearAuth();
-
-      // redirect to login
       window.location.href = "/login";
     }
 
