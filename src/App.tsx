@@ -1,6 +1,6 @@
 import { RouterProvider, createBrowserRouter, Navigate } from "react-router-dom";
 import { OperatorDashboard, OperatorManageRoutes2, OperatorDriversVehicles } from "@/features/pages/Operator";
-import { AdminDashboard, AdminDriverManagement, AdminPassengerManagement, AdminDriverVehicleOversight } from "@/features/pages/Admin"
+import { AdminDashboard, AdminPassengerManagement, AdminDriverVehicleOversight, AdminRouteStopManagement, AdminTrips } from "@/features/pages/Admin"
 import ProtectedRoute from "@/features/shared/ProtectedRoute";
 import MainLayout from "@/features/shared/components/layout/MainLayout";
 import { LoginPage } from "@/features/pages/auth/login/LoginPage";
@@ -46,15 +46,14 @@ const router = createBrowserRouter([
             children: [
               { index: true, element: <Navigate to="dashboard" replace /> },
               { path: "dashboard", element: <AdminDashboard/> },
-              { path: "users", element: <AdminPassengerManagement/> },
-              // { path: "operators", element: <AdminDriverManagement/> },
+              { path: "routes-stops", element: <AdminRouteStopManagement/> },
               { path: "drivers-vehicles", element: <AdminDriverVehicleOversight/> },
-              { path: "routes", element: <div>Route & Stop Management</div> },
-              { path: "reports", element: <div>System Reports</div> },
-              { path: "analytics", element: <div>System Analytics</div> },
-              { path: "notifications", element: <div>Notification Control Center</div> },
+              { path: "trips", element: <AdminTrips/> },
+              { path: "alert-notif", element: <div>Alerts & Noticiation</div> },
+              { path: "reports-history", element: <div>Reports & History</div> },
+              { path: "users", element: <AdminPassengerManagement/> },
+              { path: "logs", element: <div>System Logs</div> },  
               { path: "settings", element: <div>System Settings</div> },
-              { path: "logs", element: <div>Audit Logs</div> },
             ],
           },
 

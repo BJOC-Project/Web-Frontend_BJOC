@@ -1,12 +1,33 @@
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import Sidebar from "@/features/shared/components/layout/Sidebar";
-import { getUserInfo, clearAuth } from "@/features/shared/services/secureTokenManager";
+import { getUserInfo } from "@/features/shared/services/secureTokenManager";
+import { usePageTitle } from "@/features/shared/hooks";
+import { LoadingProvider } from "@/features/shared/context/LoadingContext";
 
 export default function MainLayout() {
 
   const navigate = useNavigate();
+  const location = useLocation();
   const user = getUserInfo();
+
+  /* ---------------------------
+     Dynamic Page Title
+  ---------------------------- */
+
+  let title = "BJOC System";
+
+  if (location.pathname.startsWith("/admin")) {
+    title = "Admin";
+  } else if (location.pathname.startsWith("/operator")) {
+    title = "Operator";
+  }
+
+  usePageTitle(title);
+
+  /* ---------------------------
+     Auth Guard
+  ---------------------------- */
 
   useEffect(() => {
     if (!user) {
@@ -14,47 +35,44 @@ export default function MainLayout() {
     }
   }, [user, navigate]);
 
-  const handleLogout = () => {
-    clearAuth();
-    navigate("/login", { replace: true });
-  };
-
   if (!user) return null;
 
   return (
-    <div className="h-screen w-screen flex overflow-hidden bg-gray-100">
 
-      <Sidebar role={user.role} />
+    <LoadingProvider>
 
-      <div className="flex-1 flex flex-col h-full">
+      <div className="h-screen w-screen flex overflow-hidden bg-gray-100">
 
-        <header className="h-16 flex items-center justify-between px-8 bg-white border-b shadow-sm flex-shrink-0">
+        {/* Sidebar */}
+        <Sidebar role={user.role} />
 
-          <h1 className="text-lg font-semibold text-gray-800 capitalize">
-            {user.role} Panel
-          </h1>
+        <div className="flex-1 flex flex-col h-full">
 
-          <div className="flex items-center gap-6">
-            <span className="text-sm text-gray-500">
-              Welcome, {user.fullName}
-            </span>
+          {/* Header */}
+          <header className="h-16 flex items-center justify-between px-8 bg-white border-b shadow-sm flex-shrink-0">
 
-            <button
-              onClick={handleLogout}
-              className="px-4 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-            >
-              Logout
-            </button>
-          </div>
+            <h1 className="text-lg font-semibold text-gray-800 capitalize">
+              {user.role} Panel
+            </h1>
 
-        </header>
+            <div className="flex items-center gap-6">
+              <span className="text-sm text-gray-500">
+                Welcome, {user.fullName}
+              </span>
+            </div>
 
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-4">
-          <Outlet />
-        </main>
+          </header>
+
+          {/* Page Content */}
+          <main className="flex-1 bg-gray-50 p-4">
+            <Outlet />
+          </main>
+          <div id="modal-root"></div>
+        </div>
 
       </div>
 
-    </div>
+    </LoadingProvider>
+
   );
 }

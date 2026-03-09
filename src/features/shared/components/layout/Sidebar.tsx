@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -6,10 +6,15 @@ import {
   Bell,
   BarChart3,
   Settings,
-  ClipboardList,
+  Route,
+  Truck,
+  Navigation,
+  FileText,
   Car,
-  // UserCog
+  LogOut
 } from "lucide-react";
+
+import { clearAuth } from "@/features/shared/services/secureTokenManager";
 
 type Role = "admin" | "operator";
 
@@ -19,12 +24,19 @@ interface SidebarProps {
 
 export default function Sidebar({ role }: SidebarProps) {
 
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    clearAuth();
+    navigate("/login", { replace: true });
+  }
+
   const linkStyle = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-3 px-4 py-2 rounded-lg transition text-sm
      ${isActive
-        ? "bg-white text-black font-semibold"
-        : "text-white hover:bg-green-900"
-     }`;
+      ? "bg-white text-black font-semibold"
+      : "text-white hover:bg-green-900"
+    }`;
 
   const operatorNav = [
     { label: "Dashboard", path: "/operator/dashboard", icon: <LayoutDashboard size={18} /> },
@@ -36,15 +48,14 @@ export default function Sidebar({ role }: SidebarProps) {
 
   const adminNav = [
     { label: "Dashboard Overview", path: "/admin/dashboard", icon: <LayoutDashboard size={16} /> },
+    { label: "Route & Stop Management", path: "/admin/routes-stops", icon: <Route size={16} /> },
+    { label: "Driver & Vehicle Oversight", path: "/admin/drivers-vehicles", icon: <Truck size={16} /> },
+    { label: "Trips / Operation", path: "/admin/trips", icon: <Navigation size={16} /> },
+    { label: "Alerts & Notification", path: "/admin/alert-notif", icon: <Bell size={16} /> },
+    { label: "Reports & History", path: "/admin/reports-history", icon: <BarChart3 size={16} /> },
     { label: "User Management", path: "/admin/users", icon: <Users size={16} /> },
-    // { label: "Operator Management", path: "/admin/operators", icon: <UserCog size={16} /> },
-    { label: "Driver & Vehicle Oversight", path: "/admin/drivers-vehicles", icon: <Car size={16} /> },
-    { label: "Route & Stop Management", path: "/admin/routes", icon: <Map size={16} /> },
-    { label: "System Reports", path: "/admin/reports", icon: <ClipboardList size={16} /> },
-    { label: "System Analytics", path: "/admin/analytics", icon: <BarChart3 size={16} /> },
-    { label: "Notification Control Center", path: "/admin/notifications", icon: <Bell size={16} /> },
+    { label: "System Logs", path: "/admin/logs", icon: <FileText size={16} /> },
     { label: "System Settings", path: "/admin/settings", icon: <Settings size={16} /> },
-    { label: "Audit Logs", path: "/admin/logs", icon: <ClipboardList size={16 } /> },
   ];
 
   const navItems = role === "admin" ? adminNav : operatorNav;
@@ -59,17 +70,32 @@ export default function Sidebar({ role }: SidebarProps) {
         padding: "10px",
         display: "flex",
         flexDirection: "column",
-        gap: "14px",
+        height: "100vh"
       }}
     >
-      <h2 style={{ marginBottom: "20px", fontSize: "18px" }}>{title}</h2>
+      <h2 style={{ marginBottom: "20px", fontSize: "18px" }}>
+        {title}
+      </h2>
 
-      {navItems.map((item) => (
-        <NavLink key={item.path} to={item.path} className={linkStyle}>
-          {item.icon}
-          <span>{item.label}</span>
-        </NavLink>
-      ))}
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1 }}>
+        {navItems.map((item) => (
+          <NavLink key={item.path} to={item.path} className={linkStyle}>
+            {item.icon}
+            <span>{item.label}</span>
+          </NavLink>
+        ))}
+      </div>
+
+      <div className="pt-4 border-t border-green-800">
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-3 w-full px-4 py-2 rounded-lg text-orange-300 hover:bg-orange-500/20 hover:text-orange-200 transition text-sm"
+        >
+          <LogOut size={18} />
+          <span className="font-medium">Logout</span>
+        </button>
+      </div>
+
     </aside>
   );
 }

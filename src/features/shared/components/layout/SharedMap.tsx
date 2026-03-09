@@ -1,12 +1,16 @@
 import Map, {
   Marker,
   NavigationControl,
+  Source,
+  Layer,
   type MapLayerMouseEvent,
 } from "react-map-gl";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { MapPin } from "lucide-react";
+import { LoaderPinwheelIcon } from "lucide-react";
 import type { MapRef } from "react-map-gl";
+import type { Feature, LineString } from "geojson";
+import { RotateCcw } from "lucide-react";
 
 type Stop = {
   id?: string;
@@ -47,6 +51,10 @@ export default function SharedMap({
   const mapRef = useRef<MapRef>(null);
   const [zoom, setZoom] = useState(initialZoom);
 
+  const [routeGeoJSON, setRouteGeoJSON] = useState<Feature<LineString> | null>(null);
+
+  const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+
   const handleRightClick = (event: MapLayerMouseEvent) => {
     event.preventDefault();
 
@@ -64,7 +72,6 @@ export default function SharedMap({
     });
   };
 
-  // Reset camera to default page position
   const resetCamera = () => {
     mapRef.current?.flyTo({
       center: [initialCenter.longitude, initialCenter.latitude],
@@ -73,6 +80,51 @@ export default function SharedMap({
       duration: 800,
     });
   };
+
+  /* --------------------------------
+     FETCH ROUTE FROM MAPBOX API
+  -------------------------------- */
+
+  useEffect(() => {
+
+    const fetchRoute = async () => {
+
+      if (stops.length < 2) {
+        setRouteGeoJSON(null);
+        return;
+      }
+
+      try {
+
+        const coordinates = stops
+          .map((s) => `${s.longitude},${s.latitude}`)
+          .join(";");
+
+        const url =
+          `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinates}?geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!data.routes || data.routes.length === 0) return;
+
+        const route = data.routes[0].geometry;
+
+        setRouteGeoJSON({
+          type: "Feature",
+          properties: {},
+          geometry: route,
+        });
+
+      } catch (error) {
+        console.error("Route fetch error:", error);
+      }
+
+    };
+
+    fetchRoute();
+
+  }, [stops]);
 
   return (
     <div className="relative w-full h-full">
@@ -88,12 +140,30 @@ export default function SharedMap({
         onMove={(e) => setZoom(e.viewState.zoom)}
         style={{ width: "100%", height: "100%" }}
         mapStyle="mapbox://styles/mapbox/streets-v12"
-        mapboxAccessToken={import.meta.env.VITE_MAPBOX_TOKEN}
+        mapboxAccessToken={MAPBOX_TOKEN}
         onContextMenu={handleRightClick}
       >
+
         <NavigationControl position="top-left" />
 
-        {/* Stops */}
+        {routeGeoJSON && (
+          <Source id="route-line" type="geojson" data={routeGeoJSON}>
+            <Layer
+              id="route-line-layer"
+              type="line"
+              paint={{
+                "line-color": "#631de6",
+                "line-width": 2,
+                "line-opacity": 0.9,
+              }}
+              layout={{
+                "line-join": "round",
+                "line-cap": "round",
+              }}
+            />
+          </Source>
+        )}
+
         {stops.map((stop, index) => (
           <Marker
             key={stop.id || index}
@@ -105,13 +175,15 @@ export default function SharedMap({
               onClick={() => flyToLocation(stop.latitude, stop.longitude)}
               className="flex flex-col items-center cursor-pointer"
             >
-              <MapPin className="text-red-600 w-6 h-6 drop-shadow-lg hover:scale-110 transition" />
 
               {zoom >= 15 && stop.name && (
                 <span className="text-xs bg-white px-2 py-1 rounded shadow mt-1 whitespace-nowrap">
                   {stop.name}
                 </span>
               )}
+
+              <LoaderPinwheelIcon className="text-red-600 w-3 h-3 drop-shadow-lg hover:scale-110 transition" strokeWidth={2} />
+
             </div>
           </Marker>
         ))}
@@ -128,6 +200,7 @@ export default function SharedMap({
               onClick={() => flyToLocation(vehicle.latitude, vehicle.longitude)}
               className="flex flex-col items-center cursor-pointer"
             >
+
               {zoom >= 15 && (
                 <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded shadow mb-1 whitespace-nowrap">
                   {vehicle.plate_number || "Vehicle"}
@@ -136,17 +209,19 @@ export default function SharedMap({
               )}
 
               <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-md"></div>
+
             </div>
           </Marker>
         ))}
+
       </Map>
 
-      {/* Reset Map Button */}
       <button
         onClick={resetCamera}
-        className="absolute top-3 right-3 bg-white shadow-lg px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition"
+        title="Reset Map View"
+        className="absolute top-3 right-3 z-20 bg-white border border-gray-200 shadow-md rounded-lg p-2 hover:bg-gray-100 transition flex items-center justify-center"
       >
-        Reset View
+        <RotateCcw size={18} className="text-gray-700" />
       </button>
 
     </div>
