@@ -425,7 +425,7 @@ export function AdminDriverVehicleOversight() {
     }
 
     return (
-        <div className="p-2 space-y-6 ">
+        <div className="p-2">
             <div className="bg-green-100 shadow-lg rounded-xl p-4 h-[400px]">
                 <h2 className="text-lg font-semibold mb-3">Fleet Map</h2>
                 <div className="w-full h-[330px] rounded-xl overflow-hidden relative z-0">

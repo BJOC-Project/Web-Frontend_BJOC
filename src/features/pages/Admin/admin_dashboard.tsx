@@ -41,7 +41,7 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6">
 
       {/* SYSTEM SUMMARY */}
       <div className="grid grid-cols-4 gap-4">
@@ -87,11 +87,8 @@ export function AdminDashboard() {
             </ResponsiveContainer>
 
           </div>
-
         </div>
 
-
-        {/* VEHICLE STATUS CHART */}
         <div className="bg-white shadow rounded-xl p-4">
 
           <h2 className="text-lg font-semibold mb-4">

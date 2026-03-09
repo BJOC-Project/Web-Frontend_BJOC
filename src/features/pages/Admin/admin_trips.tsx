@@ -224,8 +224,9 @@ export function AdminTrips() {
   };
 
   return (
+    <>
 
-    <div className="p-6 space-y-8">
+    <div className="p-6">
 
       <h1 className="text-2xl font-bold">Trips / Operations</h1>
 
@@ -485,5 +486,6 @@ export function AdminTrips() {
         </div>
       )}
     </div>
+    </>
   );
 }

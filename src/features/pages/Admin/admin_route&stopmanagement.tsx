@@ -293,7 +293,7 @@ export function AdminRouteStopManagement() {
 
 
   return (
-    <div className="p-2 space-y-4">
+    <div className="p-2">
 
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-semibold">Route & Stop Management</h1>

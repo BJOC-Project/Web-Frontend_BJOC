@@ -64,10 +64,10 @@ export default function MainLayout() {
           </header>
 
           {/* Page Content */}
-          <main className="flex-1 bg-gray-50 p-4">
+          <main className="flex-1 bg-gray-50 p-4 overflow-visible">
             <Outlet />
           </main>
-          <div id="modal-root"></div>
+
         </div>
 
       </div>

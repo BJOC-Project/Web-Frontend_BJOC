@@ -152,7 +152,7 @@ export function AdminPassengerManagement() {
   }
 
   return (
-    <div className="p-2 space-y-4">
+    <div className="p-2">
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
