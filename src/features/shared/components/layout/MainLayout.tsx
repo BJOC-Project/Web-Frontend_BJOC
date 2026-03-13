@@ -4,6 +4,7 @@ import Sidebar from "@/features/shared/components/layout/Sidebar";
 import { getUserInfo } from "@/features/shared/services/secureTokenManager";
 import { usePageTitle } from "@/features/shared/hooks";
 import { LoadingProvider } from "@/features/shared/context/LoadingContext";
+import Navbar from "@/features/shared/components/layout/Navbar";
 
 export default function MainLayout() {
 
@@ -40,7 +41,6 @@ export default function MainLayout() {
   return (
 
     <LoadingProvider>
-
       <div className="h-screen w-screen flex overflow-hidden bg-gray-100">
 
         {/* Sidebar */}
@@ -48,30 +48,15 @@ export default function MainLayout() {
 
         <div className="flex-1 flex flex-col h-full">
 
-          {/* Header */}
-          <header className="h-16 flex items-center justify-between px-8 bg-white border-b shadow-sm flex-shrink-0">
-
-            <h1 className="text-lg font-semibold text-gray-800 capitalize">
-              {user.role} Panel
-            </h1>
-
-            <div className="flex items-center gap-6">
-              <span className="text-sm text-gray-500">
-                Welcome, {user.fullName}
-              </span>
-            </div>
-
-          </header>
-
+          <Navbar />
           {/* Page Content */}
-          <main className="flex-1 bg-gray-50 p-4 overflow-visible">
+          <main className="flex-1 bg-gray-50 p-4 overflow-y-auto">
             <Outlet />
           </main>
 
         </div>
 
       </div>
-
     </LoadingProvider>
 
   );

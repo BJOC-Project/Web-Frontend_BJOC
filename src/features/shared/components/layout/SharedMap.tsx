@@ -152,7 +152,7 @@ export default function SharedMap({
               id="route-line-layer"
               type="line"
               paint={{
-                "line-color": "#631de6",
+                "line-color": "#020ebb",
                 "line-width": 2,
                 "line-opacity": 0.9,
               }}

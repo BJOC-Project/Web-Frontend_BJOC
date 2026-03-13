@@ -64,13 +64,16 @@ export default function Sidebar({ role }: SidebarProps) {
   return (
     <aside
       style={{
-        width: "260px",
+        width: "270px",
         backgroundColor: "#104027",
         color: "white",
         padding: "10px",
         display: "flex",
         flexDirection: "column",
-        height: "100vh"
+        height: "100vh",
+        textAlign: "center",
+        paddingTop: "20px",
+        paddingBottom: "20px"
       }}
     >
       <h2 style={{ marginBottom: "20px", fontSize: "18px" }}>

@@ -7,7 +7,6 @@ export function phTime(time: string | null) {
     minute: "2-digit"
   });
 }
-/* NEW: get current PH Date object */
 
 export function phNow(): Date {
   return new Date(

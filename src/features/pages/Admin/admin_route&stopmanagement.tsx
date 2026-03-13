@@ -5,11 +5,14 @@ import { vehicleService } from "./services/vehicleService";
 import SharedMap from "@/features/shared/components/layout/SharedMap";
 import StopsTable from "@/features/shared/components/layout/StopsTable";
 import { Map, Plus, X, MapPin, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { useLoading } from "@/features/shared/context/LoadingContext";
+
 
 type Route = { id: string; route_name: string; start_location?: string; end_location?: string };
 type Stop = { id: string; latitude: number; longitude: number; name?: string; is_active?: boolean };
 
 export function AdminRouteStopManagement() {
+  const { showLoading, hideLoading } = useLoading();
 
   const [routes, setRoutes] = useState<Route[]>([]);
   const [stops, setStops] = useState<Stop[]>([]);
@@ -217,13 +220,24 @@ export function AdminRouteStopManagement() {
 
     setConfirmAction(() => async () => {
 
-      await routesService.deleteRoute(id);
+      try {
 
-      loadRoutes();
+        await routesService.deleteRoute(id);
 
-      if (selectedRoute?.id === id) {
-        setSelectedRoute(null);
-        setStops([]);
+        await loadRoutes();
+
+        if (selectedRoute?.id === id) {
+          setSelectedRoute(null);
+          setStops([]);
+        }
+
+      } catch (err: any) {
+
+        alert(
+          err?.response?.data?.error ||
+          "Failed to delete route."
+        );
+
       }
 
     });
@@ -293,131 +307,136 @@ export function AdminRouteStopManagement() {
 
 
   return (
-    <div className="p-2">
+    <div className="p-2 h-full flex flex-col">
 
-      <div className="flex justify-between items-center">
-        <h1 className="text-xl font-semibold">Route & Stop Management</h1>
-        <button onClick={() => setShowCreateRoute(true)} className="flex items-center gap-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700"><Plus size={18} /></button>
-      </div>
+      <div className="grid grid-cols-3 gap-4 flex-1 min-h-0">
+        <div className="col-span-1 bg-white border rounded-xl flex flex-col h-full min-h-0 p-2">
 
-      <div className="grid grid-cols-3 gap-4">
-        {routes.map(route => (
-          <div key={route.id} className={`bg-white border rounded-xl p-4 shadow hover:shadow-lg transition cursor-pointer ${selectedRoute?.id === route.id ? "border-orange-500" : ""}`} onClick={() => openRoute(route)}>
-
-            <div className="flex justify-between items-start">
-
-              <div>
-                <h2 className="font-semibold">{route.route_name}</h2>
-                <div className="text-sm text-gray-500">
-                  {route.start_location} → {route.end_location}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedRoute(route);
-                    loadStops(route.id);
-                    setShowRouteMap(true);
-                  }}
-                  className="text-orange-600 hover:text-orange-800"
-                >
-                  <Map size={20} />
-                </button>
-
-                <div className="relative route-menu">
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setRouteMenuOpen(routeMenuOpen === route.id ? null : route.id);
-                    }}
-                  >
-                    <MoreVertical size={18} />
-                  </button>
-
-                  {routeMenuOpen === route.id && (
-
-                    <div className="absolute right-0 mt-2 bg-white border rounded-lg shadow-md w-36 z-10">
-
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          editRoute(route);
-                          setRouteMenuOpen(null);
-                        }}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-gray-100"
-                      >
-                        <Pencil size={14} />
-                        Edit
-                      </button>
-
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteRoute(route.id);
-                          setRouteMenuOpen(null);
-                        }}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 size={14} />
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      <hr className="border-t border-gray-300 my-6" />
-
-      {selectedRoute ? (
-        <div className="space-y-4">
-
-          <div className="flex justify-between items-center">            
-            <button
-              onClick={publishRoute}
-              disabled={isPublishing}
-              className={`px-3 py-1 text-sm rounded text-white ${isPublishing ? "bg-gray-400 cursor-not-allowed" : "bg-orange-600 hover:bg-orange-700"}`}
-            >
-              {isPublishing ? "Publishing..." : "Publish"}
-            </button>
-            <h2 className="text-lg font-semibold">
-              Stops for: {selectedRoute.route_name}
-            </h2>
-
+          <div className="flex justify-between items-center p-3 border-b">
+            <h2 className="font-semibold">Routes</h2>
 
             <button
-              onClick={() => setShowCreateStop(true)}
-              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              onClick={() => setShowCreateRoute(true)}
+              className="flex items-center gap-2 bg-orange-600 text-white px-3 py-2 rounded-lg hover:bg-orange-700"
             >
               <Plus size={16} />
             </button>
           </div>
+          <div className="flex-1 overflow-y-auto space-y-2">
+          {routes.map(route => (
+            <div key={route.id} className={`bg-white border mt-2 rounded-xl p-4 shadow hover:shadow-lg transition cursor-pointer ${selectedRoute?.id === route.id ? "border-orange-500" : ""}`} onClick={() => openRoute(route)}>
 
-          <StopsTable
-            stops={stops}
-            onDelete={deleteStop}
-            onToggle={toggleStop}
-            onEdit={openEditStop}
-            onReorder={reorderStops}
-          />
+              <div className="flex justify-between items-start">
 
+                <div>
+                  <h2 className="font-semibold">{route.route_name}</h2>
+                  <div className="text-sm text-gray-500">
+                    {route.start_location} → {route.end_location}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 ">
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedRoute(route);
+                      loadStops(route.id);
+                      setShowRouteMap(true);
+                    }}
+                    className="text-orange-600 hover:text-orange-800"
+                  >
+                    <Map size={20} />
+                  </button>
+
+                  <div className="relative route-menu">
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setRouteMenuOpen(routeMenuOpen === route.id ? null : route.id);
+                      }}
+                    >
+                      <MoreVertical size={18} />
+                    </button>
+
+                    {routeMenuOpen === route.id && (
+
+                      <div className="absolute right-0 mt-2 bg-white border rounded-lg shadow-md w-36 z-10">
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            editRoute(route);
+                            setRouteMenuOpen(null);
+                          }}
+                          className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-gray-100"
+                        >
+                          <Pencil size={14} />
+                          Edit
+                        </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteRoute(route.id);
+                            setRouteMenuOpen(null);
+                          }}
+                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 size={14} />
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+          </div>
         </div>
+        <div className="col-span-2">
+          {selectedRoute ? (
+            <div className="space-y-4">
 
-      ) : (
-        
+              <div className="flex justify-between items-center">
+                <button
+                  onClick={publishRoute}
+                  disabled={isPublishing}
+                  className={`px-3 py-1 text-sm rounded text-white ${isPublishing ? "bg-gray-400 cursor-not-allowed" : "bg-orange-600 hover:bg-orange-700"}`}
+                >
+                  {isPublishing ? "Publishing..." : "Publish"}
+                </button>
+                <h2 className="text-lg font-semibold">
+                  Stops for: {selectedRoute.route_name}
+                </h2>
 
-        <div className="flex items-center justify-center h-[200px] border rounded-xl bg-gray-50 text-gray-500">
-          Select a route to display its stops in this panel.
+
+                <button
+                  onClick={() => setShowCreateStop(true)}
+                  className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+
+              <StopsTable
+                stops={stops}
+                onDelete={deleteStop}
+                onToggle={toggleStop}
+                onEdit={openEditStop}
+                onReorder={reorderStops}
+              />
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-[200px] border rounded-xl bg-gray-50 text-gray-500">
+              Select a route to display its stops in this panel.
+            </div>
+
+          )}
         </div>
-
-      )}
-
+      </div>
       {showCreateStop && (
         <div className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center">
           <div className="bg-white p-6 rounded-xl w-[420px] space-y-4">
@@ -604,9 +623,16 @@ export function AdminRouteStopManagement() {
               </button>
 
               <button
+                disabled={false}
                 onClick={async () => {
-                  if (confirmAction) await confirmAction();
-                  setShowActionConfirm(false);
+                  if (!confirmAction) return;
+                  try {
+                    showLoading();
+                    await confirmAction();
+                  } finally {
+                    hideLoading();
+                    setShowActionConfirm(false);
+                  }
                 }}
                 className={`px-3 py-2 text-white rounded ${confirmColor}`}
               >
