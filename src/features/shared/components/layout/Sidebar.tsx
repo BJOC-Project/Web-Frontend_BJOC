@@ -51,7 +51,6 @@ export default function Sidebar({ role }: SidebarProps) {
     { label: "Route & Stop Management", path: "/admin/routes-stops", icon: <Route size={16} /> },
     { label: "Driver & Vehicle Oversight", path: "/admin/drivers-vehicles", icon: <Truck size={16} /> },
     { label: "Trips / Operation", path: "/admin/trips", icon: <Navigation size={16} /> },
-    { label: "Alerts & Notification", path: "/admin/alert-notif", icon: <Bell size={16} /> },
     { label: "Reports & History", path: "/admin/reports-history", icon: <BarChart3 size={16} /> },
     { label: "User Management", path: "/admin/users", icon: <Users size={16} /> },
     { label: "System Logs", path: "/admin/logs", icon: <FileText size={16} /> },

@@ -1,54 +1,134 @@
-import api from "@/features/shared/services/api";
+import axios from "axios";
+
+const API = "http://localhost:5000/api/admin";
+
+const api = axios.create({
+  baseURL: API,
+  timeout: 10000
+});
 
 export const adminService = {
 
-    async getSystemSummary() {
-        const res = await api.get("/admin/dashboard/summary");
-        return res.data;
-    },
+  /* ---------------- DASHBOARD SUMMARY ---------------- */
 
-    async getOperatorStats() {
-        const res = await api.get("/admin/dashboard/operators");
-        return res.data;
-    },
+  async getDashboardSummary(filter?: string) {
 
-    async getVehicleStats() {
-        const res = await api.get("/admin/dashboard/vehicles");
-        return res.data;
-    },
+    const res = await api.get("/dashboard-summary", {
+      params: { filter }
+    });
 
-    async getRecentActivity() {
-        const res = await api.get("/admin/dashboard/activity");
-        return res.data;
-    },
-
-  async getDrivers() {
-    const res = await api.get("/drivers");
     return res.data;
+
   },
 
-  async createDriver(data:any) {
-    const res = await api.post("/drivers", data);
+
+  /* ---------------- VEHICLE STATUS ---------------- */
+
+  async getVehicleStatus() {
+
+    const res = await api.get("/vehicle-status");
+
     return res.data;
+
   },
 
-  async updateDriver(id:string,data:any) {
-    const res = await api.put(`/drivers/${id}`, data);
+
+  /* ---------------- ROUTES ---------------- */
+
+  async getRoutes() {
+
+    const res = await api.get("/routes");
+
     return res.data;
+
   },
 
-  async deleteDriver(id:string) {
-    const res = await api.delete(`/drivers/${id}`);
+
+  /* ---------------- PASSENGER WAITING TREND ---------------- */
+
+  async getWaitingStops(routeId: string, filter?: string) {
+
+    const res = await api.get("/waiting-stops", {
+      params: {
+        routeId,
+        filter
+      }
+    });
+
     return res.data;
+
   },
 
-    /* ---------------------------
-     VEHICLE LOCATIONS (MAP)
-  --------------------------- */
 
-  async getVehicleLocations() {
-    const res = await api.get("/operators/vehicle-locations");
+  /* ---------------- DRIVER PERFORMANCE ---------------- */
+
+  async getDriverPerformance(filter?: string) {
+
+    const res = await api.get("/driver-performance", {
+      params: { filter }
+    });
+
     return res.data;
+
   },
+
+
+  /* ---------------- ALERTS ---------------- */
+
+  async getLatestAlerts() {
+
+    const res = await api.get("/alerts");
+
+    return res.data;
+
+  },
+
+
+  /* ---------------- NOTIFICATIONS ---------------- */
+
+  async getLatestNotifications() {
+
+    const res = await api.get("/notifications");
+
+    return res.data;
+
+  },
+
+
+  /* ---------------- APP RATINGS ---------------- */
+
+  async getAppRatings(filter?: string) {
+
+    const res = await api.get("/app-ratings", {
+      params: { filter }
+    });
+
+    return res.data;
+
+  },
+
+
+  /* ---------------- SUGGESTIONS ---------------- */
+
+  async getSuggestions(filter?: string) {
+
+    const res = await api.get("/suggestions", {
+      params: { filter }
+    });
+
+    return res.data;
+
+  },
+
+
+  /* ---------------- LIVE VEHICLE MAP ---------------- */
+
+  async getLiveMap() {
+
+    const res = await api.get("/live-map");
+
+    return res.data;
+
+  }
 
 };

@@ -307,14 +307,12 @@ export function AdminRouteStopManagement() {
 
 
   return (
-    <div className="p-2 h-full flex flex-col">
-
+    <div className="p-2 h-full flex flex-col overflow-hidden">
       <div className="grid grid-cols-3 gap-4 flex-1 min-h-0">
+        {/* ROUTES PANEL */}
         <div className="col-span-1 bg-white border rounded-xl flex flex-col h-full min-h-0 p-2">
-
           <div className="flex justify-between items-center p-3 border-b">
             <h2 className="font-semibold">Routes</h2>
-
             <button
               onClick={() => setShowCreateRoute(true)}
               className="flex items-center gap-2 bg-orange-600 text-white px-3 py-2 rounded-lg hover:bg-orange-700"
@@ -322,83 +320,84 @@ export function AdminRouteStopManagement() {
               <Plus size={16} />
             </button>
           </div>
+
           <div className="flex-1 overflow-y-auto space-y-2">
-          {routes.map(route => (
-            <div key={route.id} className={`bg-white border mt-2 rounded-xl p-4 shadow hover:shadow-lg transition cursor-pointer ${selectedRoute?.id === route.id ? "border-orange-500" : ""}`} onClick={() => openRoute(route)}>
+            {routes.map(route => (
+              <div key={route.id} className={`bg-white border mt-2 rounded-xl p-4 shadow hover:shadow-lg transition cursor-pointer ${selectedRoute?.id === route.id ? "border-orange-500" : ""}`} onClick={() => openRoute(route)}>
 
-              <div className="flex justify-between items-start">
+                <div className="flex justify-between items-start">
 
-                <div>
-                  <h2 className="font-semibold">{route.route_name}</h2>
-                  <div className="text-sm text-gray-500">
-                    {route.start_location} → {route.end_location}
+                  <div>
+                    <h2 className="font-semibold">{route.route_name}</h2>
+                    <div className="text-sm text-gray-500">
+                      {route.start_location} → {route.end_location}
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-2 ">
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedRoute(route);
-                      loadStops(route.id);
-                      setShowRouteMap(true);
-                    }}
-                    className="text-orange-600 hover:text-orange-800"
-                  >
-                    <Map size={20} />
-                  </button>
-
-                  <div className="relative route-menu">
+                  <div className="flex items-center gap-2 ">
 
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setRouteMenuOpen(routeMenuOpen === route.id ? null : route.id);
+                        setSelectedRoute(route);
+                        loadStops(route.id);
+                        setShowRouteMap(true);
                       }}
+                      className="text-orange-600 hover:text-orange-800"
                     >
-                      <MoreVertical size={18} />
+                      <Map size={20} />
                     </button>
 
-                    {routeMenuOpen === route.id && (
+                    <div className="relative route-menu">
 
-                      <div className="absolute right-0 mt-2 bg-white border rounded-lg shadow-md w-36 z-10">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRouteMenuOpen(routeMenuOpen === route.id ? null : route.id);
+                        }}
+                      >
+                        <MoreVertical size={18} />
+                      </button>
 
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            editRoute(route);
-                            setRouteMenuOpen(null);
-                          }}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-gray-100"
-                        >
-                          <Pencil size={14} />
-                          Edit
-                        </button>
+                      {routeMenuOpen === route.id && (
 
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteRoute(route.id);
-                            setRouteMenuOpen(null);
-                          }}
-                          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 size={14} />
-                          Delete
-                        </button>
-                      </div>
-                    )}
+                        <div className="absolute right-0 mt-2 bg-white border rounded-lg shadow-md w-36 z-10">
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              editRoute(route);
+                              setRouteMenuOpen(null);
+                            }}
+                            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-gray-100"
+                          >
+                            <Pencil size={14} />
+                            Edit
+                          </button>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteRoute(route.id);
+                              setRouteMenuOpen(null);
+                            }}
+                            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 size={14} />
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
           </div>
         </div>
-        <div className="col-span-2">
+        <div className="col-span-2 flex flex-col min-h-0">
           {selectedRoute ? (
-            <div className="space-y-4">
+            <div className="flex flex-col flex-1 min-h-0 space-y-3">
 
               <div className="flex justify-between items-center">
                 <button

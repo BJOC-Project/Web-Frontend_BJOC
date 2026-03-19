@@ -33,7 +33,7 @@ export function AssignModal({
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
 
-      <div className="bg-white p-6 rounded-xl w-[420px] space-y-4">
+      <div className="bg-white p-6 rounded-xl w-[300px] space-y-4">
 
         <div className="flex justify-between items-center">
 
@@ -86,13 +86,11 @@ export function AssignModal({
             <option value="">Select Driver</option>
 
             {drivers.map(d => (
-              <option key={d.id} value={d.id}>
+              <option key={d.id} value={d.id} className="border p-2 rounded w-full">
                 {d.first_name} {d.last_name}
               </option>
             ))}
-
           </select>
-
         )}
 
         <button

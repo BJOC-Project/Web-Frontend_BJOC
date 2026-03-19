@@ -6,40 +6,29 @@ type Vehicle = {
   driver?: string | null;
   capacity?: number;
   trips_today?: number;
-  waiting?: boolean;
+  scheduled?: boolean;
   ongoing?: boolean;
 };
 
 type Props = {
   vehicle: Vehicle;
-  onDispatch: () => void;
+  onDispatch: (vehicle: Vehicle) => void;
 };
 
 export const FleetVehicleCard: FC<Props> = ({ vehicle, onDispatch }) => {
 
   const status = vehicle.ongoing
     ? "ongoing"
-    : vehicle.waiting
-    ? "waiting"
+    : vehicle.scheduled
+    ? "scheduled"
     : "available";
-
-  const disabled = status !== "available";
 
   return (
 
     <div
-      onClick={() => {
-        if (!disabled) onDispatch();
-      }}
-      className={`p-3 rounded-lg border transition w-full
-      ${
-        disabled
-          ? "bg-gray-100 opacity-60 cursor-not-allowed"
-          : "bg-white hover:shadow hover:border-gray-300 cursor-pointer"
-      }`}
+      onClick={() => onDispatch(vehicle)}
+      className="p-3 rounded-lg border transition w-full bg-white hover:shadow hover:border-gray-300 cursor-pointer"
     >
-
-      {/* HEADER */}
 
       <div className="flex justify-between items-center mb-2">
 
@@ -52,21 +41,19 @@ export const FleetVehicleCard: FC<Props> = ({ vehicle, onDispatch }) => {
           ${
             status === "ongoing"
               ? "bg-red-100 text-red-600"
-              : status === "waiting"
+              : status === "scheduled"
               ? "bg-yellow-100 text-yellow-700"
               : "bg-green-100 text-green-700"
           }`}
         >
           {status === "ongoing"
             ? "On Trip"
-            : status === "waiting"
-            ? "Waiting"
+            : status === "scheduled"
+            ? "Scheduled"
             : "Available"}
         </span>
 
       </div>
-
-      {/* BODY */}
 
       <div className="text-[12px] text-gray-600 space-y-[2px]">
 
@@ -92,14 +79,6 @@ export const FleetVehicleCard: FC<Props> = ({ vehicle, onDispatch }) => {
         </div>
 
       </div>
-
-      {disabled && (
-
-        <div className="mt-2 text-[10px] text-gray-400 border-t pt-1 text-center">
-          Dispatch unavailable
-        </div>
-
-      )}
 
     </div>
 

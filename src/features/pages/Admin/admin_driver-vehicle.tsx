@@ -8,11 +8,13 @@ import { vehicleService } from "./services/vehicleService";
 import {
     DriverCard,
     VehicleCard,
+} from "@/features";
+import {
     DriverModal,
     VehicleModal,
     AssignModal,
     ConfirmModal
-} from "@/features";
+} from './modal'
 
 export type Driver = {
     id: string;

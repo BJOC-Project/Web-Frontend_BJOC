@@ -43,6 +43,7 @@ export default function MainLayout() {
     <LoadingProvider>
       <div className="h-screen w-screen flex overflow-hidden bg-gray-100">
 
+      
         {/* Sidebar */}
         <Sidebar role={user.role} />
 

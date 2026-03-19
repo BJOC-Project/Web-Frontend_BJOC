@@ -84,11 +84,10 @@ function SortableRow({ stop, index, onDelete, onToggle, onEdit }: RowProps) {
       {/* Status */}
       <td className="px-5 py-4">
         <span
-          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-            isActive
-              ? "bg-green-100 text-green-700"
-              : "bg-red-100 text-red-700"
-          }`}
+          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${isActive
+            ? "bg-green-100 text-green-700"
+            : "bg-red-100 text-red-700"
+            }`}
         >
           {isActive ? "Active" : "Inactive"}
         </span>
@@ -151,28 +150,30 @@ export default function StopsTable({
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden h-full flex flex-col">
+    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm h-full flex flex-col overflow-hidden">
 
+      {/* HEADER TABLE */}
+      <table className="w-full text-sm table-fixed">
+        <thead className="bg-green-900 text-white uppercase text-xs tracking-wider">
+          <tr>
+            <th className="w-[40px]"></th>
+            <th className="w-[80px] text-left px-5 py-3 font-semibold">Order</th>
+            <th className="text-left px-5 py-3 font-semibold">Bus Stop</th>
+            <th className="w-[120px] text-left px-5 py-3 font-semibold">Status</th>
+            <th className="w-[140px] text-center px-5 py-3 font-semibold">Actions</th>
+          </tr>
+        </thead>
+      </table>
+
+      {/* SCROLLABLE BODY */}
       <div className="flex-1 overflow-y-auto min-h-0">
-
+        
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
-
           <table className="w-full text-sm table-fixed">
-
-            <thead className="bg-green-900 text-white uppercase text-xs tracking-wider sticky top-0 shadow-sm">
-              <tr>
-                <th className="w-[40px]"></th>
-                <th className="w-[80px] text-left px-5 py-3 font-semibold">Order</th>
-                <th className="text-left px-5 py-3 font-semibold">Bus Stop</th>
-                <th className="w-[120px] text-left px-5 py-3 font-semibold">Status</th>
-                <th className="w-[140px] text-center px-5 py-3 font-semibold">Actions</th>
-              </tr>
-            </thead>
-
             <SortableContext
               items={stops.map(s => s.id)}
               strategy={verticalListSortingStrategy}

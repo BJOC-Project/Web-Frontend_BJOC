@@ -1,6 +1,6 @@
 import { RouterProvider, createBrowserRouter, Navigate } from "react-router-dom";
 import { OperatorDashboard, OperatorManageRoutes2, OperatorDriversVehicles } from "@/features/pages/Operator";
-import { AdminDashboard, AdminPassengerManagement, AdminDriverVehicleOversight, AdminRouteStopManagement, AdminTrips } from "@/features/pages/Admin"
+import { AdminDashboard, AdminPassengerManagement, AdminUserManagement, AdminActivityLogsPage, AdminDriverVehicleOversight, AdminRouteStopManagement, AdminTrips, AdminReportsHistory } from "@/features/pages/Admin"
 import ProtectedRoute from "@/features/shared/ProtectedRoute";
 import MainLayout from "@/features/shared/components/layout/MainLayout";
 import { LoginPage } from "@/features/pages/auth/login/LoginPage";
@@ -9,7 +9,6 @@ import { GlobalModalProvider } from "@/features/shared/context/GlobalModalContex
 import GlobalModalRenderer from "@/features/shared/components/modal/GlobalModalRenderer";
 
 const router = createBrowserRouter([
-
   // LOGIN
   {
     path: "/login",
@@ -53,10 +52,9 @@ const router = createBrowserRouter([
               { path: "routes-stops", element: <AdminRouteStopManagement /> },
               { path: "drivers-vehicles", element: <AdminDriverVehicleOversight /> },
               { path: "trips", element: <AdminTrips /> },
-              { path: "alert-notif", element: <div>Alerts & Noticiation</div> },
-              { path: "reports-history", element: <div>Reports & History</div> },
-              { path: "users", element: <AdminPassengerManagement /> },
-              { path: "logs", element: <div>System Logs</div> },
+              { path: "reports-history", element: <AdminReportsHistory/> },
+              { path: "users", element: <AdminUserManagement /> },
+              { path: "logs", element: <AdminActivityLogsPage/> },
               { path: "settings", element: <div>System Settings</div> },
               { path: "notifications", element: <NotificationHistoryPage /> },
               { path: "alert", element: <AlertHistoryPage /> },
