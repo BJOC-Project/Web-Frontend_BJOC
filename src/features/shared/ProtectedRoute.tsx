@@ -1,35 +1,26 @@
-import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { getUserInfo } from "@/features/shared/services/secureTokenManager";
+﻿import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { AuthSkeleton } from "@/features/pages/auth/pages";
+import { getDefaultPathForRole, useAuthSession } from "@/features/pages/auth";
+import type { Role } from "@/features/types/auth";
 
-type Role = "operator" | "admin";
+interface ProtectedRouteProps {
+  allowedRoles: Role[];
+}
 
-
-export default function ProtectedRoute() {
+export default function ProtectedRoute({ allowedRoles }: ProtectedRouteProps) {
   const location = useLocation();
-  const user = getUserInfo();
+  const { user, isBootstrapping } = useAuthSession();
+
+  if (isBootstrapping) {
+    return <AuthSkeleton />;
+  }
 
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  const roleAccess: Record<Role, string[]> = {
-    operator: ["/operator"],
-    admin: ["/admin"],
-  };
-
-  const allowedPaths = roleAccess[user.role];
-
-  // EXTRA SAFETY (prevents crash forever)
-  if (!allowedPaths) {
-    return <Navigate to="/" replace />;
-  }
-
-  const hasAccess = allowedPaths.some((allowedPath) =>
-    location.pathname.startsWith(allowedPath)
-  );
-
-  if (!hasAccess) {
-    return <Navigate to={`${allowedPaths[0]}/dashboard`} replace />;
+  if (!allowedRoles.includes(user.role)) {
+    return <Navigate to={getDefaultPathForRole(user.role)} replace />;
   }
 
   return <Outlet />;

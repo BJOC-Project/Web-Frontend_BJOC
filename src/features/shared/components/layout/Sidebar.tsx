@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
+﻿import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -11,39 +11,35 @@ import {
   Navigation,
   FileText,
   Car,
-  LogOut
+  LogOut,
 } from "lucide-react";
-
-import { clearAuth } from "@/features/shared/services/secureTokenManager";
-
-type Role = "admin" | "operator";
+import type { Role } from "@/features/types/auth";
+import { useAuthSession } from "@/features/pages/auth";
 
 interface SidebarProps {
   role: Role;
 }
 
 export default function Sidebar({ role }: SidebarProps) {
-
   const navigate = useNavigate();
+  const { logout } = useAuthSession();
 
   function handleLogout() {
-    clearAuth();
+    logout();
     navigate("/login", { replace: true });
   }
 
   const linkStyle = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-3 px-4 py-2 rounded-lg transition text-sm
-     ${isActive
-      ? "bg-white text-black font-semibold"
-      : "text-white hover:bg-green-900"
+    `flex items-center gap-3 px-4 py-2 rounded-lg transition text-sm ${
+      isActive ? "bg-white text-black font-semibold" : "text-white hover:bg-green-900"
     }`;
 
-  const operatorNav = [
-    { label: "Dashboard", path: "/operator/dashboard", icon: <LayoutDashboard size={18} /> },
-    { label: "Manage Drivers & Vehicles", path: "/operator/drivers-vehicles", icon: <Car size={18} /> },
-    { label: "Manage Routes", path: "/operator/routes", icon: <Map size={18} /> },
-    { label: "Reports & Analytics", path: "/operator/reports", icon: <BarChart3 size={18} /> },
-    { label: "Notifications Management", path: "/operator/notifications", icon: <Bell size={18} /> },
+  const staffNav = [
+    { label: "Dashboard", path: "/staff/dashboard", icon: <LayoutDashboard size={18} /> },
+    { label: "Manage Drivers & Vehicles", path: "/staff/drivers-vehicles", icon: <Car size={18} /> },
+    { label: "Manage Routes", path: "/staff/routes", icon: <Map size={18} /> },
+    { label: "Reports & Analytics", path: "/staff/reports", icon: <BarChart3 size={18} /> },
+    { label: "Notifications Management", path: "/staff/notifications", icon: <Bell size={18} /> },
   ];
 
   const adminNav = [
@@ -57,8 +53,8 @@ export default function Sidebar({ role }: SidebarProps) {
     { label: "System Settings", path: "/admin/settings", icon: <Settings size={16} /> },
   ];
 
-  const navItems = role === "admin" ? adminNav : operatorNav;
-  const title = role === "admin" ? "BJOC Admin" : "BJOC Operator";
+  const navItems = role === "admin" ? adminNav : staffNav;
+  const title = role === "admin" ? "BJOC Admin" : "BJOC Staff";
 
   return (
     <aside
@@ -72,12 +68,10 @@ export default function Sidebar({ role }: SidebarProps) {
         height: "100vh",
         textAlign: "center",
         paddingTop: "20px",
-        paddingBottom: "20px"
+        paddingBottom: "20px",
       }}
     >
-      <h2 style={{ marginBottom: "20px", fontSize: "18px" }}>
-        {title}
-      </h2>
+      <h2 style={{ marginBottom: "20px", fontSize: "18px" }}>{title}</h2>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1 }}>
         {navItems.map((item) => (
@@ -97,7 +91,6 @@ export default function Sidebar({ role }: SidebarProps) {
           <span className="font-medium">Logout</span>
         </button>
       </div>
-
     </aside>
   );
 }

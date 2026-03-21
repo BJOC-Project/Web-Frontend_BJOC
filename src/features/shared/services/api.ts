@@ -1,5 +1,5 @@
-import axios from "axios";
-import { getAccessToken, clearAuth } from "./secureTokenManager";
+﻿import axios from "axios";
+import { clearAuthSession, getAccessToken } from "@/features/pages/auth/services";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
@@ -19,14 +19,13 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-
     if (error.response?.status === 401) {
-      clearAuth();
+      clearAuthSession();
       window.location.href = "/login";
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;
