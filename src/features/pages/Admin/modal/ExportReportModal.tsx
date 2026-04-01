@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { Download, X } from "lucide-react";
+
 import { exportCSV } from "@/features/shared/utils/reportExport";
 
 type Props = {
-  open: boolean;
-  onClose: () => void;
-  trips: any[];
-  passengers: any[];
   drivers: any[];
+  onClose: () => void;
+  open: boolean;
+  passengers: any[];
+  trips: any[];
 };
 
 export default function ExportReportModal({
@@ -14,134 +16,127 @@ export default function ExportReportModal({
   onClose,
   trips,
   passengers,
-  drivers
+  drivers,
 }: Props) {
-
   const [type, setType] = useState("trips");
 
-  if (!open) return null;
+  const previewData = useMemo(() => {
+    if (type === "passengers") {
+      return passengers;
+    }
+    if (type === "drivers") {
+      return drivers;
+    }
 
-  let previewData: any[] = [];
+    return trips;
+  }, [drivers, passengers, trips, type]);
 
-  if (type === "trips") previewData = trips;
-  if (type === "passengers") previewData = passengers;
-  if (type === "drivers") previewData = drivers;
+  if (!open) {
+    return null;
+  }
 
-  const handleExport = () => {
+  function handleExport() {
+    exportCSV(`BJOC_${type}_report_${new Date().toISOString().slice(0, 10)}.csv`, previewData);
+  }
 
-    exportCSV(
-      `BJOC_${type}_report_${new Date().toISOString().slice(0,10)}.csv`,
-      previewData
-    );
-
-  };
+  const headers = previewData.length > 0 ? Object.keys(previewData[0]) : [];
 
   return (
-
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-
-      <div className="bg-white w-[720px] rounded-lg shadow-lg p-5">
-
-        {/* HEADER */}
-
-        <div className="flex justify-between items-center mb-4">
-
-          <h2 className="font-semibold text-green-900">
-            Export Report
-          </h2>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-[28px] bg-white p-5 shadow-2xl sm:p-6"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900">Export Report</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Review a sample of the selected dataset before exporting.
+            </p>
+          </div>
 
           <button
+            className="rounded-full border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
             onClick={onClose}
-            className="text-sm text-gray-500"
+            type="button"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <label className="block sm:min-w-[220px]">
+            <span className="mb-2 block text-sm font-medium text-slate-600">Dataset</span>
+            <select
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-500"
+              onChange={(event) => setType(event.target.value)}
+              value={type}
+            >
+              <option value="trips">Trip History</option>
+              <option value="passengers">Passenger Report</option>
+              <option value="drivers">Driver Performance</option>
+            </select>
+          </label>
+
+          <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
+            {previewData.length} row{previewData.length !== 1 ? "s" : ""} available
+          </div>
+        </div>
+
+        <div className="overflow-hidden rounded-[24px] border border-slate-200">
+          <div className="max-h-[420px] overflow-auto">
+            {previewData.length === 0 ? (
+              <div className="px-4 py-12 text-center text-sm text-slate-400">
+                No data available for this export.
+              </div>
+            ) : (
+              <table className="min-w-full text-sm">
+                <thead className="sticky top-0 bg-emerald-950 text-left text-white">
+                  <tr>
+                    {headers.map((header) => (
+                      <th key={header} className="px-4 py-3 font-medium">
+                        {header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {previewData.slice(0, 10).map((row, index) => (
+                    <tr key={index} className="border-b border-slate-100">
+                      {Object.values(row).map((value, valueIndex) => (
+                        <td key={valueIndex} className="px-4 py-3 text-slate-600">
+                          {String(value)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button
+            className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            onClick={onClose}
+            type="button"
           >
             Close
           </button>
-
-        </div>
-
-        {/* OPTIONS */}
-
-        <div className="flex gap-3 mb-4">
-
-          <select
-            value={type}
-            onChange={(e)=>setType(e.target.value)}
-            className="border px-2 py-1 text-sm rounded"
-          >
-
-            <option value="trips">
-              Trip History
-            </option>
-
-            <option value="passengers">
-              Passenger Report
-            </option>
-
-            <option value="drivers">
-              Driver Performance
-            </option>
-
-          </select>
-
-        </div>
-
-        {/* PREVIEW */}
-
-        <div className="border rounded-md max-h-[300px] overflow-auto">
-
-          <table className="w-full text-xs">
-
-            <thead className="bg-green-900 text-white sticky top-0">
-
-              <tr>
-
-                {previewData.length > 0 &&
-                  Object.keys(previewData[0]).map((key)=>(
-                    <th key={key} className="p-2 text-left">
-                      {key}
-                    </th>
-                  ))
-                }
-
-              </tr>
-
-            </thead>
-
-            <tbody>
-
-              {previewData.slice(0,10).map((row,i)=>(
-                <tr key={i} className="border-b">
-
-                  {Object.values(row).map((val,j)=>(
-                    <td key={j} className="p-2">
-                      {String(val)}
-                    </td>
-                  ))}
-
-                </tr>
-              ))}
-
-            </tbody>
-
-          </table>
-
-        </div>
-
-        {/* FOOTER */}
-
-        <div className="flex justify-end mt-4">
-
           <button
+            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-950 px-4 py-3 text-sm font-medium text-white transition hover:bg-emerald-900"
             onClick={handleExport}
-            className="bg-green-900 text-white px-4 py-2 text-sm rounded"
+            type="button"
           >
+            <Download size={14} />
             Export CSV
           </button>
-
         </div>
-
       </div>
-
     </div>
   );
 }

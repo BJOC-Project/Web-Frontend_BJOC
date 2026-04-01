@@ -1,260 +1,289 @@
-
-import { X, Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
-import { useGlobalModal } from "@/features/shared/context/GlobalModalContext";
+import {
+  useState,
+  type ChangeEvent,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
+import { Eye, EyeOff, X } from "lucide-react";
 
 type DriverForm = {
+  confirm_password: string;
+  contact_number: string;
+  email: string;
   first_name: string;
   last_name: string;
-  email: string;
-  contact_number: string;
   license_number: string;
   password: string;
-  confirm_password: string;
   status: string;
 };
 
 type Props = {
-  open: boolean;
   form: DriverForm;
-  setForm: React.Dispatch<React.SetStateAction<DriverForm>>;
-  onSave: () => void;
   onClose: () => void;
+  onSave: () => Promise<void> | void;
+  open: boolean;
+  setForm: Dispatch<SetStateAction<DriverForm>>;
 };
 
-export function DriverModal({
-  open,
-  form,
-  setForm,
-  onSave,
-  onClose
-}: Props) {
+export function DriverModal({ open, form, setForm, onSave, onClose }: Props) {
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const { openModal } = useGlobalModal();
+  if (!open) {
+    return null;
+  }
 
-  const [errors,setErrors] = useState<any>({});
-  const [showPassword,setShowPassword] = useState(false);
-  const [showConfirm,setShowConfirm] = useState(false);
+  function handleChange(event: ChangeEvent<HTMLInputElement>) {
+    const { name, value } = event.target;
 
-  if (!open) return null;
-
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    });
-
-    setErrors((prev:any)=>({
-      ...prev,
-      [e.target.name]: ""
+    setForm((previous) => ({
+      ...previous,
+      [name]: value,
     }));
 
+    setSubmitError("");
+    setErrors((previous) => ({
+      ...previous,
+      [name]: "",
+    }));
   }
 
-  function validate(){
+  function validate() {
+    const nextErrors: Record<string, string> = {};
 
-    const newErrors:any = {};
+    if (!form.first_name) {
+      nextErrors.first_name = "First name is required";
+    }
+    if (!form.last_name) {
+      nextErrors.last_name = "Last name is required";
+    }
+    if (!form.email) {
+      nextErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
+      nextErrors.email = "Invalid email format";
+    }
+    if (!form.contact_number) {
+      nextErrors.contact_number = "Contact number required";
+    }
+    if (!form.license_number) {
+      nextErrors.license_number = "License number required";
+    }
+    if (!form.password) {
+      nextErrors.password = "Password required";
+    }
+    if (form.password !== form.confirm_password) {
+      nextErrors.confirm_password = "Passwords do not match";
+    }
 
-    if(!form.first_name) newErrors.first_name = "First name is required";
-    if(!form.last_name) newErrors.last_name = "Last name is required";
-
-    if(!form.email) newErrors.email = "Email is required";
-    else if(!/\S+@\S+\.\S+/.test(form.email))
-      newErrors.email = "Invalid email format";
-
-    if(!form.contact_number)
-      newErrors.contact_number = "Contact number required";
-
-    if(!form.license_number)
-      newErrors.license_number = "License number required";
-
-    if(!form.password)
-      newErrors.password = "Password required";
-
-    if(form.password !== form.confirm_password)
-      newErrors.confirm_password = "Passwords do not match";
-
-    setErrors(newErrors);
-
-    return Object.keys(newErrors).length === 0;
-
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   }
 
-  function handleConfirm(){
+  async function handleConfirm() {
+    if (!validate()) {
+      return;
+    }
 
-    if(!validate()) return;
-
-    onClose();
-
-    openModal("verifyAccount",{
-      email: form.email,
-      phone: form.contact_number,
-      onVerified: onSave
-    });
-
+    try {
+      setSubmitting(true);
+      setSubmitError("");
+      await onSave();
+    } catch (error: any) {
+      setSubmitError(error?.response?.data?.message || error?.message || "Failed to save driver.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[28px] bg-white p-5 shadow-2xl sm:p-6"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900">Driver Details</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Add a driver profile and assign secure login credentials.
+            </p>
+          </div>
 
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-
-      <div className="bg-white p-6 rounded-xl w-[350px] space-y-6">
-
-        {/* HEADER */}
-
-        <div className="flex justify-between items-center">
-
-          <h2 className="font-semibold text-lg">
-            Driver Details
-          </h2>
-
-          <button onClick={onClose}>
-            <X/>
+          <button
+            className="rounded-full border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
+            onClick={onClose}
+            type="button"
+          >
+            <X size={18} />
           </button>
-
         </div>
 
+        {submitError && (
+          <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {submitError}
+          </div>
+        )}
 
-        {/* FORM */}
-
-        <div className="grid grid-cols-2 gap-4">
-
-          {/* FIRST NAME */}
-
-          <div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <InputField error={errors.first_name} label="First name">
             <input
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-amber-500"
               name="first_name"
+              onChange={handleChange}
+              placeholder="First name"
               value={form.first_name}
-              onChange={handleChange}
-              placeholder="First Name"
-              className="border-b border-gray-300 focus:border-orange-500 outline-none py-2 w-full"
             />
-            <p className="text-xs text-red-500">{errors.first_name}</p>
-          </div>
+          </InputField>
 
-
-          {/* LAST NAME */}
-
-          <div>
+          <InputField error={errors.last_name} label="Last name">
             <input
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-amber-500"
               name="last_name"
+              onChange={handleChange}
+              placeholder="Last name"
               value={form.last_name}
-              onChange={handleChange}
-              placeholder="Last Name"
-              className="border-b border-gray-300 focus:border-orange-500 outline-none py-2 w-full"
             />
-            <p className="text-xs text-red-500">{errors.last_name}</p>
-          </div>
+          </InputField>
 
-
-          {/* EMAIL */}
-
-          <div className="col-span-2">
+          <InputField className="sm:col-span-2" error={errors.email} label="Email">
             <input
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-amber-500"
               name="email"
+              onChange={handleChange}
+              placeholder="Email address"
               value={form.email}
-              onChange={handleChange}
-              placeholder="Email"
-              className="border-b border-gray-300 focus:border-orange-500 outline-none py-2 w-full"
             />
-            <p className="text-xs text-red-500">{errors.email}</p>
-          </div>
+          </InputField>
 
-
-          {/* CONTACT */}
-
-          <div>
+          <InputField error={errors.contact_number} label="Contact number">
             <input
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-amber-500"
               name="contact_number"
+              onChange={handleChange}
+              placeholder="Contact number"
               value={form.contact_number}
-              onChange={handleChange}
-              placeholder="Contact No."
-              className="border-b border-gray-300 focus:border-orange-500 outline-none py-2 w-full"
             />
-            <p className="text-xs text-red-500">{errors.contact_number}</p>
-          </div>
+          </InputField>
 
-
-          {/* LICENSE */}
-
-          <div>
+          <InputField error={errors.license_number} label="License number">
             <input
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-amber-500"
               name="license_number"
+              onChange={handleChange}
+              placeholder="License number"
               value={form.license_number}
-              onChange={handleChange}
-              placeholder="Licence No."
-              className="border-b border-gray-300 focus:border-orange-500 outline-none py-2 w-full"
             />
-            <p className="text-xs text-red-500">{errors.license_number}</p>
-          </div>
+          </InputField>
 
+          <PasswordField
+            error={errors.password}
+            label="Password"
+            onChange={handleChange}
+            onToggle={() => setShowPassword((previous) => !previous)}
+            placeholder="Password"
+            show={showPassword}
+            value={form.password}
+            name="password"
+          />
 
-          {/* PASSWORD */}
-
-          <div className="col-span-2 relative">
-
-            <input
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              type={showPassword ? "text":"password"}
-              placeholder="Password"
-              className="border-b border-gray-300 focus:border-orange-500 outline-none py-2 w-full pr-8"
-            />
-
-            <span
-              className="absolute right-1 top-2 cursor-pointer text-gray-400"
-              onClick={()=>setShowPassword(!showPassword)}
-            >
-              {showPassword ? <EyeOff size={16}/> : <Eye size={16}/>}
-            </span>
-
-            <p className="text-xs text-red-500">{errors.password}</p>
-
-          </div>
-
-
-          {/* CONFIRM PASSWORD */}
-
-          <div className="col-span-2 relative">
-
-            <input
-              name="confirm_password"
-              value={form.confirm_password}
-              onChange={handleChange}
-              type={showConfirm ? "text":"password"}
-              placeholder="Confirm Password"
-              className="border-b border-gray-300 focus:border-orange-500 outline-none py-2 w-full pr-8"
-            />
-
-            <span
-              className="absolute right-1 top-2 cursor-pointer text-gray-400"
-              onClick={()=>setShowConfirm(!showConfirm)}
-            >
-              {showConfirm ? <EyeOff size={16}/> : <Eye size={16}/>}
-            </span>
-
-            <p className="text-xs text-red-500">{errors.confirm_password}</p>
-
-          </div>
-
+          <PasswordField
+            error={errors.confirm_password}
+            label="Confirm password"
+            onChange={handleChange}
+            onToggle={() => setShowConfirm((previous) => !previous)}
+            placeholder="Confirm password"
+            show={showConfirm}
+            value={form.confirm_password}
+            name="confirm_password"
+          />
         </div>
 
-
-        {/* BUTTON */}
-
-        <button
-          onClick={handleConfirm}
-          className="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-lg"
-        >
-          Confirm Details
-        </button>
-
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button
+            className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            onClick={onClose}
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            className="rounded-2xl bg-amber-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={submitting}
+            onClick={handleConfirm}
+            type="button"
+          >
+            {submitting ? "Saving..." : "Confirm Details"}
+          </button>
+        </div>
       </div>
-
     </div>
-
   );
+}
 
+type InputFieldProps = {
+  children: ReactNode;
+  className?: string;
+  error?: string;
+  label: string;
+};
+
+function InputField({ children, className = "", error, label }: InputFieldProps) {
+  return (
+    <label className={`block ${className}`}>
+      <span className="mb-2 block text-sm font-medium text-slate-600">{label}</span>
+      {children}
+      {error && <p className="mt-2 text-xs text-rose-600">{error}</p>}
+    </label>
+  );
+}
+
+type PasswordFieldProps = {
+  error?: string;
+  label: string;
+  name: string;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  onToggle: () => void;
+  placeholder: string;
+  show: boolean;
+  value: string;
+};
+
+function PasswordField({
+  error,
+  label,
+  name,
+  onChange,
+  onToggle,
+  placeholder,
+  show,
+  value,
+}: PasswordFieldProps) {
+  return (
+    <InputField error={error} label={label}>
+      <div className="relative">
+        <input
+          className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-11 text-sm outline-none transition focus:border-amber-500"
+          name={name}
+          onChange={onChange}
+          placeholder={placeholder}
+          type={show ? "text" : "password"}
+          value={value}
+        />
+        <button
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
+          onClick={onToggle}
+          type="button"
+        >
+          {show ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
+      </div>
+    </InputField>
+  );
 }

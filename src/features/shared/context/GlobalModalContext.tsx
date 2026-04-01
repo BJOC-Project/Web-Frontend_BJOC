@@ -9,12 +9,12 @@ type ModalType =
 type ModalState = {
   open: boolean;
   type: ModalType | null;
-  data?: any;
+  data?: unknown;
 };
 
 type ModalContextType = {
   modal: ModalState;
-  openModal: (type: ModalType, data?: any) => void;
+  openModal: (type: ModalType, data?: unknown) => void;
   closeModal: () => void;
 };
 
@@ -27,7 +27,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     data: null
   });
 
-  function openModal(type: ModalType, data?: any) {
+  function openModal(type: ModalType, data?: unknown) {
     setModal({
       open: true,
       type,

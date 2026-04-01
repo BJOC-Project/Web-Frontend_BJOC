@@ -1,18 +1,20 @@
-import { X } from "lucide-react";
 import { useEffect } from "react";
-import type { User, UserRole } from "../services/userService";
+import { X } from "lucide-react";
+
 import { getFullName } from "../services/userService";
+import type { User, UserRole } from "../services/userService";
 
 type Props = {
-  user: User;
   onClose: () => void;
+  user: User;
 };
 
-export function UserDetailsModal({ user, onClose }: Props) {
-
+export function UserDetailsModal({ onClose, user }: Props) {
   useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
     };
 
     document.addEventListener("keydown", handleEsc);
@@ -21,84 +23,88 @@ export function UserDetailsModal({ user, onClose }: Props) {
 
   const statusColor =
     user.status === "suspended"
-      ? "bg-red-100 text-red-600"
-      : user.status === "deleted"
-      ? "bg-gray-100 text-gray-500"
-      : "bg-green-100 text-green-600";
+      ? "bg-rose-100 text-rose-700"
+      : "bg-emerald-100 text-emerald-700";
 
   const roleColors: Record<UserRole, string> = {
-    admin: "bg-purple-100 text-purple-600",
-    operator: "bg-blue-100 text-blue-600",
-    driver: "bg-orange-100 text-orange-600",
-    passenger: "bg-gray-100 text-gray-600"
+    admin: "bg-violet-100 text-violet-700",
+    driver: "bg-amber-100 text-amber-700",
+    operator: "bg-sky-100 text-sky-700",
+    passenger: "bg-slate-100 text-slate-700",
   };
 
   return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-[28px] bg-white p-5 shadow-2xl sm:p-6"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900">User Details</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Full profile snapshot for this account.
+            </p>
+          </div>
 
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={onClose}>
-
-      <div className="bg-white w-[420px] rounded-lg p-6 space-y-5" onClick={(e) => e.stopPropagation()}>
-
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold">User Details</h2>
-          <button onClick={onClose}>
-            <X size={18}/>
+          <button
+            className="rounded-full border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
+            onClick={onClose}
+            type="button"
+          >
+            <X size={18} />
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <DetailCard className="sm:col-span-2" label="Name" value={getFullName(user)} />
+          <DetailCard className="sm:col-span-2" label="Email" value={user.email ?? "-"} />
+          <DetailCard label="Contact Number" value={user.contact_number ?? "-"} />
+          <DetailCard label="Created At" value={user.created_at ? new Date(user.created_at).toLocaleString() : "-"} />
 
-          <div>
-            <label className="text-sm text-gray-500">Name</label>
-            <div className="border-b py-2 text-sm">
-              {getFullName(user)}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm text-gray-500">Email</label>
-            <div className="border-b py-2 text-sm">
-              {user.email ?? "—"}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm text-gray-500">Contact Number</label>
-            <div className="border-b py-2 text-sm">
-              {user.contact_number ?? "—"}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm text-gray-500">Role</label>
-            <span className={`px-2 py-1 text-xs rounded ${roleColors[user.role]}`}>
+          <div className="rounded-2xl bg-slate-50 px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Role</p>
+            <span className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase ${roleColors[user.role]}`}>
               {user.role}
             </span>
           </div>
 
-          <div>
-            <label className="text-sm text-gray-500">Status</label>
-            <span className={`px-2 py-1 text-xs rounded ${statusColor}`}>
+          <div className="rounded-2xl bg-slate-50 px-4 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Status</p>
+            <span className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase ${statusColor}`}>
               {user.status ?? "active"}
             </span>
           </div>
-
-          <div>
-            <label className="text-sm text-gray-500">Created At</label>
-            <div className="border-b py-2 text-sm">
-              {user.created_at
-                ? new Date(user.created_at).toLocaleString()
-                : "—"}
-            </div>
-          </div>
-
         </div>
 
-        <div className="flex justify-end">
-          <button onClick={onClose}>Close</button>
+        <div className="mt-6 flex justify-end">
+          <button
+            className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            onClick={onClose}
+            type="button"
+          >
+            Close
+          </button>
         </div>
-
       </div>
+    </div>
+  );
+}
+
+type DetailCardProps = {
+  className?: string;
+  label: string;
+  value: string;
+};
+
+function DetailCard({ className = "", label, value }: DetailCardProps) {
+  return (
+    <div className={`rounded-2xl bg-slate-50 px-4 py-4 ${className}`}>
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</p>
+      <p className="mt-3 text-sm text-slate-700">{value}</p>
     </div>
   );
 }

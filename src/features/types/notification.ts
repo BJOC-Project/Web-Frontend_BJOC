@@ -8,4 +8,5 @@ export interface Notification {
   created_at: string;
   entity_id?: string;
   entity_type?: string;
+  metadata?: Record<string, unknown> | null;
 }

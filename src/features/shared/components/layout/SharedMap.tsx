@@ -1,16 +1,16 @@
 import Map, {
+  Layer,
   Marker,
   NavigationControl,
   Source,
-  Layer,
   type MapLayerMouseEvent,
+  type MapRef,
 } from "react-map-gl";
-import { useRef, useState, useEffect } from "react";
-import "mapbox-gl/dist/mapbox-gl.css";
-import { LoaderPinwheelIcon } from "lucide-react";
-import type { MapRef } from "react-map-gl";
+import { useEffect, useRef, useState } from "react";
 import type { Feature, LineString } from "geojson";
-import { RotateCcw } from "lucide-react";
+import { LoaderPinwheelIcon, RotateCcw } from "lucide-react";
+import "mapbox-gl/dist/mapbox-gl.css";
+import type { MapVehicle } from "@/features/types/operations";
 
 type Stop = {
   id?: string;
@@ -19,17 +19,9 @@ type Stop = {
   name?: string;
 };
 
-type Vehicle = {
-  vehicle_id: string;
-  latitude: number;
-  longitude: number;
-  plate_number?: string;
-  driver?: string;
-};
-
 type SharedMapProps = {
   stops?: Stop[];
-  vehicles?: Vehicle[];
+  vehicles?: MapVehicle[];
   initialCenter: {
     latitude: number;
     longitude: number;
@@ -47,13 +39,11 @@ export default function SharedMap({
   bearing = 0,
   onRightClick,
 }: SharedMapProps) {
-
   const mapRef = useRef<MapRef>(null);
   const [zoom, setZoom] = useState(initialZoom);
+  const [routeGeoJson, setRouteGeoJson] = useState<Feature<LineString> | null>(null);
 
-  const [routeGeoJSON, setRouteGeoJSON] = useState<Feature<LineString> | null>(null);
-
-  const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+  const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
   const handleRightClick = (event: MapLayerMouseEvent) => {
     event.preventDefault();
@@ -64,9 +54,9 @@ export default function SharedMap({
     });
   };
 
-  const flyToLocation = (lat: number, lng: number) => {
+  const flyToLocation = (latitude: number, longitude: number) => {
     mapRef.current?.flyTo({
-      center: [lng, lat],
+      center: [longitude, latitude],
       zoom: 15,
       duration: 800,
     });
@@ -76,78 +66,68 @@ export default function SharedMap({
     mapRef.current?.flyTo({
       center: [initialCenter.longitude, initialCenter.latitude],
       zoom: initialZoom,
-      bearing: bearing,
+      bearing,
       duration: 800,
     });
   };
 
-  /* --------------------------------
-     FETCH ROUTE FROM MAPBOX API
-  -------------------------------- */
-
   useEffect(() => {
-
     const fetchRoute = async () => {
-
-      if (stops.length < 2) {
-        setRouteGeoJSON(null);
+      if (stops.length < 2 || !mapboxToken) {
+        setRouteGeoJson(null);
         return;
       }
 
       try {
-
         const coordinates = stops
-          .map((s) => `${s.longitude},${s.latitude}`)
+          .map((stop) => `${stop.longitude},${stop.latitude}`)
           .join(";");
 
         const url =
-          `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinates}?geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`;
+          `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinates}` +
+          `?geometries=geojson&overview=full&access_token=${mapboxToken}`;
 
         const response = await fetch(url);
         const data = await response.json();
 
-        if (!data.routes || data.routes.length === 0) return;
+        if (!data.routes || data.routes.length === 0) {
+          setRouteGeoJson(null);
+          return;
+        }
 
-        const route = data.routes[0].geometry;
-
-        setRouteGeoJSON({
+        setRouteGeoJson({
           type: "Feature",
           properties: {},
-          geometry: route,
+          geometry: data.routes[0].geometry,
         });
-
       } catch (error) {
         console.error("Route fetch error:", error);
       }
-
     };
 
-    fetchRoute();
-
-  }, [stops]);
+    void fetchRoute();
+  }, [mapboxToken, stops]);
 
   return (
-    <div className="relative w-full h-full">
-
+    <div className="relative h-full w-full">
       <Map
         ref={mapRef}
         initialViewState={{
           latitude: initialCenter.latitude,
           longitude: initialCenter.longitude,
           zoom: initialZoom,
-          bearing: bearing,
+          bearing,
         }}
-        onMove={(e) => setZoom(e.viewState.zoom)}
+        onMove={(event) => setZoom(event.viewState.zoom)}
         style={{ width: "100%", height: "100%" }}
         mapStyle="mapbox://styles/mapbox/streets-v12"
-        mapboxAccessToken={MAPBOX_TOKEN}
+        mapboxAccessToken={mapboxToken}
         onContextMenu={handleRightClick}
       >
-
         <NavigationControl position="top-left" />
 
-        {routeGeoJSON && (
-          <Source id="route-line" type="geojson" data={routeGeoJSON}>
+        {routeGeoJson && (
+          <Source id="route-line" type="geojson" data={routeGeoJson}>
             <Layer
               id="route-line-layer"
               type="line"
@@ -173,57 +153,57 @@ export default function SharedMap({
           >
             <div
               onClick={() => flyToLocation(stop.latitude, stop.longitude)}
-              className="flex flex-col items-center cursor-pointer"
+              className="flex cursor-pointer flex-col items-center"
             >
-
               {zoom >= 15 && stop.name && (
-                <span className="text-xs bg-white px-2 py-1 rounded shadow mt-1 whitespace-nowrap">
+                <span className="mt-1 whitespace-nowrap rounded bg-white px-2 py-1 text-xs shadow">
                   {stop.name}
                 </span>
               )}
 
-              <LoaderPinwheelIcon className="text-red-600 w-3 h-3 drop-shadow-lg hover:scale-110 transition" strokeWidth={2} />
-
+              <LoaderPinwheelIcon
+                className="h-3 w-3 text-red-600 drop-shadow-lg transition hover:scale-110"
+                strokeWidth={2}
+              />
             </div>
           </Marker>
         ))}
 
-        {/* Vehicles */}
-        {vehicles.map((vehicle) => (
-          <Marker
-            key={vehicle.vehicle_id}
-            latitude={vehicle.latitude}
-            longitude={vehicle.longitude}
-            anchor="bottom"
-          >
-            <div
-              onClick={() => flyToLocation(vehicle.latitude, vehicle.longitude)}
-              className="flex flex-col items-center cursor-pointer"
+        {vehicles.map((vehicle) => {
+          const driverLabel = vehicle.driver ?? vehicle.driver_name;
+
+          return (
+            <Marker
+              key={vehicle.vehicle_id}
+              latitude={vehicle.latitude}
+              longitude={vehicle.longitude}
+              anchor="bottom"
             >
+              <div
+                onClick={() => flyToLocation(vehicle.latitude, vehicle.longitude)}
+                className="flex cursor-pointer flex-col items-center"
+              >
+                {zoom >= 15 && (
+                  <span className="mb-1 whitespace-nowrap rounded bg-blue-600 px-2 py-1 text-xs text-white shadow">
+                    {vehicle.plate_number || "Vehicle"}
+                    {driverLabel ? ` | ${driverLabel}` : ""}
+                  </span>
+                )}
 
-              {zoom >= 15 && (
-                <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded shadow mb-1 whitespace-nowrap">
-                  {vehicle.plate_number || "Vehicle"}
-                  {vehicle.driver ? ` • ${vehicle.driver}` : ""}
-                </span>
-              )}
-
-              <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-md"></div>
-
-            </div>
-          </Marker>
-        ))}
-
+                <div className="h-4 w-4 rounded-full border-2 border-white bg-blue-500 shadow-md"></div>
+              </div>
+            </Marker>
+          );
+        })}
       </Map>
 
       <button
         onClick={resetCamera}
         title="Reset Map View"
-        className="absolute top-3 right-3 z-20 bg-white border border-gray-200 shadow-md rounded-lg p-2 hover:bg-gray-100 transition flex items-center justify-center"
+        className="absolute right-3 top-3 z-20 flex items-center justify-center rounded-lg border border-gray-200 bg-white p-2 shadow-md transition hover:bg-gray-100"
       >
         <RotateCcw size={18} className="text-gray-700" />
       </button>
-
     </div>
   );
 }

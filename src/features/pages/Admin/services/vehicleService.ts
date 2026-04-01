@@ -1,33 +1,24 @@
 import api from "@/features/shared/services/api";
+import { extractApiData } from "@/features/shared/services/extractApiData";
 
 export const vehicleService = {
-
-  /* =========================
-     GET VEHICLES
-  ========================= */
 
   async getVehicles() {
 
     const res = await api.get("/vehicles");
+    const vehicles = extractApiData<any[]>(res.data) ?? [];
 
-    const vehicles = res.data ?? [];
-
-    return vehicles.map((v: any) => ({
-
-      id: v.id,
-      plate_number: v.plate_number,
-      model: v.model,
-      capacity: v.capacity,
-      driver_id: v.driver_id ?? null,
-      driver: v.driver ?? null
-
+    return vehicles.map((vehicle) => ({
+      id: vehicle.id,
+      plate_number: vehicle.plate_number,
+      model: vehicle.model,
+      capacity: vehicle.capacity,
+      driver_id: vehicle.driver_id ?? null,
+      driver: vehicle.driver ?? null,
+      status: vehicle.status,
     }));
 
   },
-
-  /* =========================
-     CREATE VEHICLE
-  ========================= */
 
   async createVehicle(data: {
     plate_number: string;
@@ -36,40 +27,32 @@ export const vehicleService = {
   }) {
 
     const res = await api.post("/vehicles", data);
-    return res.data;
+
+    return extractApiData(res.data);
 
   },
-
-  /* =========================
-     UPDATE VEHICLE
-  ========================= */
 
   async updateVehicle(id: string, data: any) {
 
     const res = await api.put(`/vehicles/${id}`, data);
-    return res.data;
+
+    return extractApiData(res.data);
 
   },
-
-  /* =========================
-     DELETE VEHICLE
-  ========================= */
 
   async deleteVehicle(id: string) {
 
     const res = await api.delete(`/vehicles/${id}`);
-    return res.data;
+
+    return extractApiData(res.data);
 
   },
-
-  /* =========================
-     VEHICLE MAP LOCATIONS
-  ========================= */
 
   async getVehicleLocations() {
 
     const res = await api.get("/vehicles/vehicle-locations");
-    return res.data ?? [];
+
+    return extractApiData<any[]>(res.data) ?? [];
 
   }
 

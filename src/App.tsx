@@ -1,29 +1,50 @@
-﻿import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom";
-import {
-  OperatorDashboard,
-  OperatorManageRoutes2,
-  OperatorDriversVehicles,
-} from "@/features/pages/Operator";
-import {
-  AdminDashboard,
-  AdminUserManagement,
-  AdminActivityLogsPage,
-  AdminDriverVehicleOversight,
-  AdminRouteStopManagement,
-  AdminTrips,
-  AdminReportsHistory,
-} from "@/features/pages/Admin";
+import { Suspense, lazy, type ReactNode } from "react";
+import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom";
+import { AuthProvider } from "@/features/pages/auth";
 import ProtectedRoute from "@/features/shared/ProtectedRoute";
-import MainLayout from "@/features/shared/components/layout/MainLayout";
-import { AuthProvider, LoginPage } from "@/features/pages/auth";
-import { AlertHistoryPage, NotificationHistoryPage } from "@/features/pages/Notification";
-import { GlobalModalProvider } from "@/features/shared/context/GlobalModalContext";
-import GlobalModalRenderer from "@/features/shared/components/modal/GlobalModalRenderer";
+
+const LoginPage = lazy(() => import("@/features/pages/auth").then((module) => ({ default: module.LoginPage })));
+const MainLayout = lazy(() => import("@/features/shared/components/layout/MainLayout"));
+const OperatorDashboard = lazy(() => import("@/features/pages/Operator").then((module) => ({ default: module.OperatorDashboard })));
+const OperatorManageRoutes2 = lazy(() => import("@/features/pages/Operator").then((module) => ({ default: module.OperatorManageRoutes2 })));
+const OperatorDriversVehicles = lazy(() => import("@/features/pages/Operator").then((module) => ({ default: module.OperatorDriversVehicles })));
+const OperatorReportsPage = lazy(() => import("@/features/pages/Operator").then((module) => ({ default: module.OperatorReportsPage })));
+const OperatorTrips = lazy(() => import("@/features/pages/Operator").then((module) => ({ default: module.OperatorTrips })));
+const AdminDashboard = lazy(() => import("@/features/pages/Admin").then((module) => ({ default: module.AdminDashboard })));
+const AdminUserManagement = lazy(() => import("@/features/pages/Admin").then((module) => ({ default: module.AdminUserManagement })));
+const AdminActivityLogsPage = lazy(() => import("@/features/pages/Admin").then((module) => ({ default: module.AdminActivityLogsPage })));
+const AdminDriverVehicleOversight = lazy(() => import("@/features/pages/Admin").then((module) => ({ default: module.AdminDriverVehicleOversight })));
+const AdminRouteStopManagement = lazy(() => import("@/features/pages/Admin").then((module) => ({ default: module.AdminRouteStopManagement })));
+const AdminTrips = lazy(() => import("@/features/pages/Admin").then((module) => ({ default: module.AdminTrips })));
+const AdminReportsHistory = lazy(() => import("@/features/pages/Admin").then((module) => ({ default: module.AdminReportsHistory })));
+const AlertHistoryPage = lazy(() => import("@/features/pages/Notification").then((module) => ({ default: module.AlertHistoryPage })));
+const NotificationHistoryPage = lazy(() => import("@/features/pages/Notification").then((module) => ({ default: module.NotificationHistoryPage })));
+
+function RouteLoader() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+      <div className="rounded-3xl border border-slate-200 bg-white px-6 py-5 text-center shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700/70">
+          BJOC
+        </p>
+        <p className="mt-2 text-sm font-medium text-slate-600">Loading workspace...</p>
+      </div>
+    </div>
+  );
+}
+
+function withSuspense(element: ReactNode) {
+  return (
+    <Suspense fallback={<RouteLoader />}>
+      {element}
+    </Suspense>
+  );
+}
 
 const router = createBrowserRouter([
   {
     path: "/login",
-    element: <LoginPage />,
+    element: withSuspense(<LoginPage />),
   },
   {
     path: "/",
@@ -38,15 +59,16 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/staff",
-        element: <MainLayout />,
+        element: withSuspense(<MainLayout />),
         children: [
           { index: true, element: <Navigate to="dashboard" replace /> },
-          { path: "dashboard", element: <OperatorDashboard /> },
-          { path: "drivers-vehicles", element: <OperatorDriversVehicles /> },
-          { path: "routes", element: <OperatorManageRoutes2 /> },
-          { path: "reports", element: <div>Reports &amp; Analytics</div> },
-          { path: "notifications", element: <NotificationHistoryPage /> },
-          { path: "alert", element: <AlertHistoryPage /> },
+          { path: "dashboard", element: withSuspense(<OperatorDashboard />) },
+          { path: "trips", element: withSuspense(<OperatorTrips />) },
+          { path: "drivers-vehicles", element: withSuspense(<OperatorDriversVehicles />) },
+          { path: "routes", element: withSuspense(<OperatorManageRoutes2 />) },
+          { path: "reports", element: withSuspense(<OperatorReportsPage />) },
+          { path: "notifications", element: withSuspense(<NotificationHistoryPage />) },
+          { path: "alert", element: withSuspense(<AlertHistoryPage />) },
         ],
       },
     ],
@@ -56,19 +78,19 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/admin",
-        element: <MainLayout />,
+        element: withSuspense(<MainLayout />),
         children: [
           { index: true, element: <Navigate to="dashboard" replace /> },
-          { path: "dashboard", element: <AdminDashboard /> },
-          { path: "routes-stops", element: <AdminRouteStopManagement /> },
-          { path: "drivers-vehicles", element: <AdminDriverVehicleOversight /> },
-          { path: "trips", element: <AdminTrips /> },
-          { path: "reports-history", element: <AdminReportsHistory /> },
-          { path: "users", element: <AdminUserManagement /> },
-          { path: "logs", element: <AdminActivityLogsPage /> },
+          { path: "dashboard", element: withSuspense(<AdminDashboard />) },
+          { path: "routes-stops", element: withSuspense(<AdminRouteStopManagement />) },
+          { path: "drivers-vehicles", element: withSuspense(<AdminDriverVehicleOversight />) },
+          { path: "trips", element: withSuspense(<AdminTrips />) },
+          { path: "reports-history", element: withSuspense(<AdminReportsHistory />) },
+          { path: "users", element: withSuspense(<AdminUserManagement />) },
+          { path: "logs", element: withSuspense(<AdminActivityLogsPage />) },
           { path: "settings", element: <div>System Settings</div> },
-          { path: "notifications", element: <NotificationHistoryPage /> },
-          { path: "alert", element: <AlertHistoryPage /> },
+          { path: "notifications", element: withSuspense(<NotificationHistoryPage />) },
+          { path: "alert", element: withSuspense(<AlertHistoryPage />) },
         ],
       },
     ],
@@ -82,10 +104,7 @@ const router = createBrowserRouter([
 export default function App() {
   return (
     <AuthProvider>
-      <GlobalModalProvider>
-        <RouterProvider router={router} />
-        <GlobalModalRenderer />
-      </GlobalModalProvider>
+      <RouterProvider router={router} />
     </AuthProvider>
   );
 }

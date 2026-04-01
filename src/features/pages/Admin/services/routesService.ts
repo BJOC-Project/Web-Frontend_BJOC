@@ -1,4 +1,5 @@
 import api from "@/features/shared/services/api";
+import { extractApiData } from "@/features/shared/services/extractApiData";
 
 export type Route = {
   id: string;
@@ -15,7 +16,7 @@ export const routesService = {
 
     const res = await api.get("/routes");
 
-    return res.data ?? [];
+    return extractApiData<Route[]>(res.data) ?? [];
 
   },
 
@@ -30,7 +31,7 @@ export const routesService = {
 
     const res = await api.patch(`/routes/${id}`, data);
 
-    return res.data;
+    return extractApiData<Route>(res.data);
 
   },
 
@@ -39,15 +40,27 @@ export const routesService = {
     start_location?: string;
     end_location?: string;
   }): Promise<Route> {
+
     const res = await api.post("/routes", data);
-    return res.data;
+
+    return extractApiData<Route>(res.data);
+
   },
+
   async deleteRoute(id: string): Promise<{ success: boolean }> {
+
     const res = await api.delete(`/routes/${id}`);
-    return res.data;
+
+    return extractApiData<{ success: boolean }>(res.data);
+
   },
+
   async publishRoute(id: string): Promise<{ success: boolean; published_version: number }> {
+
     const res = await api.post(`/routes/${id}/publish`);
-    return res.data;
+
+    return extractApiData<{ success: boolean; published_version: number }>(res.data);
+
   }
+
 };

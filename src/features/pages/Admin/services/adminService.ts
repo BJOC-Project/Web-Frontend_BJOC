@@ -1,134 +1,99 @@
-import axios from "axios";
-
-const API = "http://localhost:5000/api/admin";
-
-const api = axios.create({
-  baseURL: API,
-  timeout: 10000
-});
+import api from "@/features/shared/services/api";
+import { extractApiData } from "@/features/shared/services/extractApiData";
 
 export const adminService = {
 
-  /* ---------------- DASHBOARD SUMMARY ---------------- */
-
   async getDashboardSummary(filter?: string) {
 
-    const res = await api.get("/dashboard-summary", {
-      params: { filter }
+    const res = await api.get("/admin/dashboard-summary", {
+      params: { filter },
     });
 
-    return res.data;
+    return extractApiData(res.data);
 
   },
-
-
-  /* ---------------- VEHICLE STATUS ---------------- */
 
   async getVehicleStatus() {
 
-    const res = await api.get("/vehicle-status");
+    const res = await api.get("/admin/vehicle-status");
 
-    return res.data;
+    return extractApiData(res.data);
 
   },
-
-
-  /* ---------------- ROUTES ---------------- */
 
   async getRoutes() {
 
-    const res = await api.get("/routes");
+    const res = await api.get("/admin/routes");
 
-    return res.data;
+    return extractApiData(res.data);
 
   },
-
-
-  /* ---------------- PASSENGER WAITING TREND ---------------- */
 
   async getWaitingStops(routeId: string, filter?: string) {
 
-    const res = await api.get("/waiting-stops", {
+    const res = await api.get("/admin/waiting-stops", {
       params: {
+        filter,
         routeId,
-        filter
-      }
+      },
     });
 
-    return res.data;
+    return extractApiData(res.data);
 
   },
-
-
-  /* ---------------- DRIVER PERFORMANCE ---------------- */
 
   async getDriverPerformance(filter?: string) {
 
-    const res = await api.get("/driver-performance", {
-      params: { filter }
+    const res = await api.get("/admin/driver-performance", {
+      params: { filter },
     });
 
-    return res.data;
+    return extractApiData(res.data);
 
   },
-
-
-  /* ---------------- ALERTS ---------------- */
 
   async getLatestAlerts() {
 
-    const res = await api.get("/alerts");
+    const res = await api.get("/admin/alerts");
 
-    return res.data;
+    return extractApiData(res.data);
 
   },
-
-
-  /* ---------------- NOTIFICATIONS ---------------- */
 
   async getLatestNotifications() {
 
-    const res = await api.get("/notifications");
+    const res = await api.get("/admin/notifications");
 
-    return res.data;
+    return extractApiData(res.data);
 
   },
-
-
-  /* ---------------- APP RATINGS ---------------- */
 
   async getAppRatings(filter?: string) {
 
-    const res = await api.get("/app-ratings", {
-      params: { filter }
+    const res = await api.get("/admin/app-ratings", {
+      params: { filter },
     });
 
-    return res.data;
+    return extractApiData(res.data);
 
   },
-
-
-  /* ---------------- SUGGESTIONS ---------------- */
 
   async getSuggestions(filter?: string) {
 
-    const res = await api.get("/suggestions", {
-      params: { filter }
+    const res = await api.get("/admin/suggestions", {
+      params: { filter },
     });
 
-    return res.data;
+    return extractApiData(res.data);
 
   },
 
-
-  /* ---------------- LIVE VEHICLE MAP ---------------- */
-
   async getLiveMap() {
 
-    const res = await api.get("/live-map");
+    const res = await api.get("/admin/live-map");
 
-    return res.data;
+    return extractApiData(res.data);
 
-  }
+  },
 
 };

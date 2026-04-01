@@ -1,66 +1,69 @@
-const BASE_URL = import.meta.env.VITE_API_URL;
+import api from "@/features/shared/services/api";
+import { extractApiData } from "@/features/shared/services/extractApiData";
 
-export const getStops = async () => {
-  const res = await fetch(`${BASE_URL}/api/stops`);
+export type OperatorRoute = {
+  id: string;
+  route_name: string;
+  start_location?: string;
+  end_location?: string;
+};
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch stops");
-  }
+export type OperatorStop = {
+  id: string;
+  route_id: string;
+  stop_name: string;
+  latitude: number;
+  longitude: number;
+};
 
-  return res.json();
+export const getRoutes = async () => {
+
+  const res = await api.get("/routes");
+
+  return extractApiData<OperatorRoute[]>(res.data) ?? [];
+
+};
+
+export const getStops = async (routeId: string) => {
+
+  const res = await api.get(`/stops/route/${routeId}`);
+
+  return extractApiData<OperatorStop[]>(res.data) ?? [];
+
 };
 
 export const addStop = async (stop: {
-  name: string;
+  route_id: string;
+  stop_name: string;
   latitude: number;
   longitude: number;
 }) => {
-  const res = await fetch(`${BASE_URL}/api/stops`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(stop),
-  });
 
-  const data = await res.json();
+  const res = await api.post("/stops", stop);
 
-  if (!res.ok) {
-    throw new Error(data.error || "Failed to add stop");
-  }
+  return extractApiData(res.data);
 
-  return data;
 };
 
 export const updateStop = async (
   id: string,
-  stop: { name: string; latitude: number; longitude: number }
-) => {
-  const res = await fetch(`${BASE_URL}/api/stops/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(stop),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.error || "Failed to update stop");
+  stop: {
+    stop_name: string;
+    latitude: number;
+    longitude: number;
   }
+) => {
 
-  return data;
+  const res = await api.patch(`/stops/${id}`, stop);
+
+  return extractApiData(res.data);
+
 };
 
 export const deleteStop = async (id: string) => {
-  const res = await fetch(`${BASE_URL}/api/stops/${id}`, {
-    method: "DELETE",
-  });
 
-  if (!res.ok) {
-    throw new Error("Failed to delete stop");
-  }
+  const res = await api.delete(`/stops/${id}`);
 
-  return res.json();
+  return extractApiData(res.data);
+
 };

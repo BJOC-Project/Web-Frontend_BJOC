@@ -1,16 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
 import { phNow } from "@/lib/time";
+import {
+  calculateRouteFare,
+  formatRouteFare,
+  resolveRouteEndpoints,
+} from "@/features/shared/utils/tripSchedulePreview";
+import { stopsService } from "../services/stopsService";
 import { tripsService } from "../services/tripsService";
 
 type Props = {
-  open: boolean;
-  vehicle: any;
-  routes: any[];
   onClose: () => void;
   onSuccess: () => void;
+  open: boolean;
+  routes: any[];
+  vehicle: any;
 };
 
 export function DispatchTripModal({
@@ -18,144 +25,257 @@ export function DispatchTripModal({
   vehicle,
   routes,
   onClose,
-  onSuccess
+  onSuccess,
 }: Props) {
-
   const [selectedRoute, setSelectedRoute] = useState("");
   const [departureTime, setDepartureTime] = useState<Date | null>(phNow());
+  const [routeStops, setRouteStops] = useState<any[]>([]);
+  const [farePreview, setFarePreview] = useState<number | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
-  if (!open || !vehicle) return null;
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
 
-  const scheduleTrip = async () => {
+    setSelectedRoute("");
+    setDepartureTime(phNow());
+    setRouteStops([]);
+    setFarePreview(null);
+    setIsPreviewLoading(false);
+  }, [open, vehicle?.id]);
 
+  useEffect(() => {
+    if (!open || !selectedRoute) {
+      setRouteStops([]);
+      setFarePreview(null);
+      setIsPreviewLoading(false);
+      return;
+    }
+
+    let active = true;
+
+    setIsPreviewLoading(true);
+
+    void stopsService
+      .getStopsByRoute(selectedRoute)
+      .then((stops) => {
+        if (!active) {
+          return;
+        }
+
+        setRouteStops(stops);
+        setFarePreview(calculateRouteFare(stops));
+      })
+      .catch((error) => {
+        console.error("Route preview load error:", error);
+
+        if (!active) {
+          return;
+        }
+
+        setRouteStops([]);
+        setFarePreview(null);
+      })
+      .finally(() => {
+        if (active) {
+          setIsPreviewLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [open, selectedRoute]);
+
+  const selectedRouteRecord = routes.find((route: any) => route.id === selectedRoute) ?? null;
+  const routePreview = resolveRouteEndpoints(selectedRouteRecord, routeStops);
+  const departurePreview = departureTime
+    ? departureTime.toLocaleString("en-PH", {
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        month: "short",
+      })
+    : "Select departure time";
+  const fareLabel = selectedRoute
+    ? isPreviewLoading
+      ? "Calculating..."
+      : formatRouteFare(farePreview)
+    : "Select route first";
+
+  if (!open || !vehicle) {
+    return null;
+  }
+
+  async function scheduleTrip() {
     if (vehicle.scheduled || vehicle.ongoing) {
       alert("This vehicle already has a scheduled or active trip.");
       return;
     }
-
     if (!vehicle.driver) {
       alert("Vehicle has no assigned driver.");
       return;
     }
-
     if (!selectedRoute) {
       alert("Please select route.");
       return;
     }
-
     if (!departureTime) {
       alert("Please select departure time.");
       return;
     }
-
     if (departureTime < phNow()) {
       alert("Departure cannot be earlier than current time.");
       return;
     }
 
     const scheduledTime = departureTime.toISOString();
-
     const tripDate = scheduledTime.split("T")[0];
 
-    await tripsService.scheduleTrip({
-      vehicle_id: vehicle.id,
-      route_id: selectedRoute,
-      trip_date: tripDate,
-      scheduled_departure_time: scheduledTime
-    });
+    try {
+      await tripsService.scheduleTrip({
+        route_id: selectedRoute,
+        scheduled_departure_time: scheduledTime,
+        trip_date: tripDate,
+        vehicle_id: vehicle.id,
+      });
 
-    onSuccess();
-    onClose();
+      onSuccess();
+      onClose();
+    } catch (error) {
+      if (axios.isAxiosError(error) && typeof error.response?.data?.message === "string") {
+        alert(error.response.data.message);
+        return;
+      }
 
-  };
+      alert("Unable to schedule the trip right now.");
+    }
+  }
 
-  const addMinutes = (m: number) => {
+  function addMinutes(minutes: number) {
+    setDepartureTime(new Date(phNow().getTime() + minutes * 60000));
+  }
 
-    const d = new Date(phNow().getTime() + m * 60000);
-    setDepartureTime(d);
-
-  };
+  function getRouteLabel(route: any) {
+    return route.route_name || `${route.start_location || "Unknown"} -> ${route.end_location || "Unknown"}`;
+  }
 
   return (
-
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
-      <div className="bg-white p-6 rounded-lg w-[360px] space-y-4">
-        <h3 className="font-semibold">
-          Schedule Trip - {vehicle.plate_number}
-        </h3>
-        <div className="text-sm">
-          Driver: {vehicle.driver || "Unassigned"}
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg rounded-[28px] bg-white p-5 shadow-2xl sm:p-6"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mb-5">
+          <h3 className="text-xl font-semibold text-slate-900">Schedule Trip</h3>
+          <p className="mt-1 text-sm text-slate-500">
+            {vehicle.plate_number} with {vehicle.driver || "Unassigned"}
+          </p>
         </div>
 
-        <div>
-          <label className="text-sm block mb-1">
-            Route
+        <div className="space-y-4">
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-slate-600">Route</span>
+            <select
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-500"
+              onChange={(event) => setSelectedRoute(event.target.value)}
+              value={selectedRoute}
+            >
+              <option value="">Select Route</option>
+              {routes.map((route: any) => (
+                <option key={route.id} value={route.id}>
+                  {getRouteLabel(route)}
+                </option>
+              ))}
+            </select>
           </label>
-          <select
-            value={selectedRoute}
-            onChange={(e) => setSelectedRoute(e.target.value)}
-            className="border rounded px-3 py-2 w-full"
-          >
-            <option value="">
-              Select Route
-            </option>
 
-            {routes.map((r: any) => (
-              <option key={r.id} value={r.id}>
-                {r.start_location} → {r.end_location}
-              </option>
-            ))}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <PreviewField
+              label="Pickup"
+              value={selectedRoute ? routePreview.pickup : "Auto based on route"}
+            />
+            <PreviewField
+              label="Drop-off"
+              value={selectedRoute ? routePreview.dropOff : "Auto based on route"}
+            />
+            <PreviewField
+              label="Time"
+              value={departurePreview}
+            />
+            <PreviewField
+              label="Fare"
+              value={fareLabel}
+            />
+          </div>
 
-          </select>
-        </div>
-        <div>
-          <label className="text-sm block mb-1">
-            Departure Time
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-slate-600">Departure time</span>
+            <DatePicker
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-emerald-500"
+              dateFormat="h:mm aa"
+              maxTime={new Date(new Date().setHours(23, 59, 59, 999))}
+              minTime={phNow()}
+              onChange={(date: Date | null) => setDepartureTime(date)}
+              selected={departureTime}
+              showTimeSelect
+              showTimeSelectOnly
+              timeIntervals={5}
+            />
           </label>
-          <DatePicker
-            selected={departureTime}
-            onChange={(date: Date | null) => setDepartureTime(date)}
-            showTimeSelect
-            showTimeSelectOnly
-            timeIntervals={5}
-            dateFormat="h:mm aa"
-            minTime={phNow()}
-            maxTime={new Date(new Date().setHours(23, 59, 59, 999))}
-            className="border rounded px-3 py-2 w-full"
-          />
-          <div className="flex flex-wrap gap-1 mt-2 text-xs">
-            <button onClick={() => addMinutes(0)} className="border px-2 py-1 rounded">
-              Now
-            </button>
-            <button onClick={() => addMinutes(5)} className="border px-2 py-1 rounded">
-              +5
-            </button>
-            <button onClick={() => addMinutes(10)} className="border px-2 py-1 rounded">
-              +10
-            </button>
-            <button onClick={() => addMinutes(20)} className="border px-2 py-1 rounded">
-              +20
-            </button>
-            <button onClick={() => addMinutes(30)} className="border px-2 py-1 rounded">
-              +30
-            </button>
+
+          <div>
+            <p className="mb-2 text-sm font-medium text-slate-600">Quick set</p>
+            <div className="flex flex-wrap gap-2">
+              {[0, 5, 10, 20, 30].map((minutes) => (
+                <button
+                  key={minutes}
+                  className="rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+                  onClick={() => addMinutes(minutes)}
+                  type="button"
+                >
+                  {minutes === 0 ? "Now" : `+${minutes}`}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-        <div className="flex justify-end gap-2">
+
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button
+            className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
             onClick={onClose}
-            className="border px-3 py-1 rounded"
+            type="button"
           >
             Cancel
           </button>
           <button
-            onClick={scheduleTrip}
-            className="bg-green-600 text-white px-3 py-1 rounded"
+            className="rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-emerald-700"
+            onClick={() => void scheduleTrip()}
+            type="button"
           >
             Schedule Trip
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+type PreviewFieldProps = {
+  label: string;
+  value: string;
+};
+
+function PreviewField({ label, value }: PreviewFieldProps) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</p>
+      <p className="mt-2 text-sm font-medium text-slate-700">{value}</p>
     </div>
   );
 }

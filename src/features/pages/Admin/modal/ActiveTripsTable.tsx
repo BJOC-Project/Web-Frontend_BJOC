@@ -2,117 +2,148 @@ import { phTime } from "@/lib/time";
 import { useLoading } from "@/features/shared/context/LoadingContext";
 
 type Props = {
-  trips: any[];
   onCancel: (trip: any) => void;
   onReschedule: (trip: any) => void;
+  trips: any[];
 };
 
-export function ActiveTripsTable({
-  trips,
-  onCancel,
-  onReschedule
-}: Props) {
+function renderTripTime(trip: any) {
+  return trip.status === "scheduled"
+    ? phTime(trip.scheduled_departure_time)
+    : phTime(trip.start_time);
+}
 
+export function ActiveTripsTable({ trips, onCancel, onReschedule }: Props) {
   const { loading } = useLoading();
 
   return (
+    <section className="flex min-h-0 flex-col rounded-[24px] border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4 sm:px-5">
+        <div>
+          <h2 className="text-base font-semibold text-slate-900">Active Trips</h2>
+          <p className="text-sm text-slate-500">Monitor scheduled and ongoing operations at a glance.</p>
+        </div>
+        <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500">
+          {trips.length} active
+        </div>
+      </div>
 
-    <div className="flex flex-col overflow-hidden">
+      <div className="md:hidden">
+        {loading ? (
+          <div className="px-4 py-10 text-center text-sm text-slate-400">Loading trips...</div>
+        ) : trips.length === 0 ? (
+          <div className="px-4 py-10 text-center text-sm text-slate-400">No active trips.</div>
+        ) : (
+          <div className="divide-y divide-slate-100">
+            {trips.map((trip) => (
+              <article key={trip.id} className="space-y-4 px-4 py-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-900">{trip.route}</h3>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {trip.vehicle} • {trip.driver}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                    {trip.status}
+                  </span>
+                </div>
 
-      <h2 className="font-medium mb-2">
-        Active Trips
-      </h2>
+                <dl className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="rounded-2xl bg-slate-50 px-3 py-2">
+                    <dt className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Vehicle</dt>
+                    <dd className="mt-1 text-slate-700">{trip.vehicle}</dd>
+                  </div>
+                  <div className="rounded-2xl bg-slate-50 px-3 py-2">
+                    <dt className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Time</dt>
+                    <dd className="mt-1 text-slate-700">{renderTripTime(trip)}</dd>
+                  </div>
+                </dl>
 
-      <div className="border rounded-lg bg-white overflow-y-auto">
+                {trip.status === "scheduled" && (
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      className="flex-1 rounded-2xl bg-sky-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-sky-700"
+                      onClick={() => onReschedule(trip)}
+                      type="button"
+                    >
+                      Reschedule
+                    </button>
+                    <button
+                      className="flex-1 rounded-2xl bg-slate-800 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-900"
+                      onClick={() => onCancel(trip)}
+                      type="button"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
 
-        <table className="w-full text-xs">
-
-          <thead className="bg-green-900 border-b text-white">
-
+      <div className="hidden min-h-0 overflow-auto md:block">
+        <table className="min-w-[720px] w-full text-sm">
+          <thead className="bg-emerald-950 text-left text-white">
             <tr>
-              <th className="p-2 text-left">Vehicle</th>
-              <th className="p-2 text-left">Driver</th>
-              <th className="p-2 text-left">Route</th>
-              <th className="p-2 text-left">Time</th>
-              <th></th>
+              <th className="px-4 py-3 font-medium">Vehicle</th>
+              <th className="px-4 py-3 font-medium">Driver</th>
+              <th className="px-4 py-3 font-medium">Route</th>
+              <th className="px-4 py-3 font-medium">Time</th>
+              <th className="px-4 py-3"></th>
             </tr>
-
           </thead>
-
           <tbody>
-
-            {/* LOADING */}
             {loading && (
               <tr>
-                <td colSpan={5} className="p-4 text-center text-gray-400">
+                <td className="px-4 py-10 text-center text-slate-400" colSpan={5}>
                   Loading trips...
                 </td>
               </tr>
             )}
 
-            {/* EMPTY */}
             {!loading && trips.length === 0 && (
               <tr>
-                <td colSpan={5} className="p-4 text-center text-gray-400">
-                  No active trips
+                <td className="px-4 py-10 text-center text-slate-400" colSpan={5}>
+                  No active trips.
                 </td>
               </tr>
             )}
 
-            {/* TRIPS */}
-            {!loading && trips.map((t) => (
-
-              <tr key={t.id} className="border-b hover:bg-gray-50">
-
-                <td className="p-2">
-                  {t.vehicle}
-                </td>
-
-                <td className="p-2">
-                  {t.driver}
-                </td>
-
-                <td className="p-2">
-                  {t.route}
-                </td>
-
-                <td className="p-2">
-
-                  {t.status === "scheduled"
-                    ? phTime(t.scheduled_departure_time)
-                    : phTime(t.start_time)}
-
-                </td>
-
-                <td className="p-2 text-right space-x-1">
-
-                  {t.status === "scheduled" && (
-                    <>
-                      <button
-                        onClick={() => onReschedule(t)}
-                        className="px-2 py-1 text-xs bg-blue-600 text-white rounded"
-                      >
-                        Reschedule
-                      </button>
-
-                      <button
-                        onClick={() => onCancel(t)}
-                        className="px-2 py-1 text-xs bg-gray-600 text-white rounded"
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  )}
-
-                </td>
-
-              </tr>
-
-            ))}
-
+            {!loading &&
+              trips.map((trip) => (
+                <tr key={trip.id} className="border-b border-slate-100 transition hover:bg-slate-50/80">
+                  <td className="px-4 py-4 text-slate-700">{trip.vehicle}</td>
+                  <td className="px-4 py-4 text-slate-700">{trip.driver}</td>
+                  <td className="px-4 py-4 font-medium text-slate-900">{trip.route}</td>
+                  <td className="px-4 py-4 text-slate-700">{renderTripTime(trip)}</td>
+                  <td className="px-4 py-4 text-right">
+                    {trip.status === "scheduled" && (
+                      <div className="flex justify-end gap-2">
+                        <button
+                          className="rounded-xl bg-sky-600 px-3 py-2 text-xs font-medium text-white transition hover:bg-sky-700"
+                          onClick={() => onReschedule(trip)}
+                          type="button"
+                        >
+                          Reschedule
+                        </button>
+                        <button
+                          className="rounded-xl bg-slate-800 px-3 py-2 text-xs font-medium text-white transition hover:bg-slate-900"
+                          onClick={() => onCancel(trip)}
+                          type="button"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   );
 }

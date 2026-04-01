@@ -1,21 +1,25 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Map, MapPin, MoreVertical, Pencil, Plus, Trash2, X } from "lucide-react";
+import SharedMap from "@/features/shared/components/layout/SharedMap";
+import StopsTable, { type Stop as RouteStop } from "@/features/shared/components/layout/StopsTable";
+import { useLoading } from "@/features/shared/context/LoadingContext";
+import type { MapVehicle, StopCoords } from "@/features/types/operations";
 import { routesService } from "./services/routesService";
 import { stopsService } from "./services/stopsService";
 import { vehicleService } from "./services/vehicleService";
-import SharedMap from "@/features/shared/components/layout/SharedMap";
-import StopsTable from "@/features/shared/components/layout/StopsTable";
-import { Map, Plus, X, MapPin, MoreVertical, Pencil, Trash2 } from "lucide-react";
-import { useLoading } from "@/features/shared/context/LoadingContext";
 
-
-type Route = { id: string; route_name: string; start_location?: string; end_location?: string };
-type Stop = { id: string; latitude: number; longitude: number; name?: string; is_active?: boolean };
+type Route = {
+  end_location?: string;
+  id: string;
+  route_name: string;
+  start_location?: string;
+};
 
 export function AdminRouteStopManagement() {
   const { showLoading, hideLoading } = useLoading();
 
   const [routes, setRoutes] = useState<Route[]>([]);
-  const [stops, setStops] = useState<Stop[]>([]);
+  const [stops, setStops] = useState<RouteStop[]>([]);
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
   const [routeMenuOpen, setRouteMenuOpen] = useState<string | null>(null);
 
@@ -23,17 +27,23 @@ export function AdminRouteStopManagement() {
   const [showCreateStop, setShowCreateStop] = useState(false);
   const [showSelectMap, setShowSelectMap] = useState(false);
   const [showRouteMap, setShowRouteMap] = useState(false);
-
   const [showConfirm, setShowConfirm] = useState(false);
-  const [pendingCoords, setPendingCoords] = useState<any>(null);
+  const [pendingCoords, setPendingCoords] = useState<StopCoords | null>(null);
 
   const [editingStopId, setEditingStopId] = useState<string | null>(null);
   const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
+  const [vehicleLocations, setVehicleLocations] = useState<MapVehicle[]>([]);
 
-  const [vehicleLocations, setVehicleLocations] = useState<any[]>([]);
-
-  const [routeForm, setRouteForm] = useState({ route_name: "", start_location: "", end_location: "" });
-  const [stopForm, setStopForm] = useState({ stop_name: "", latitude: "", longitude: "" });
+  const [routeForm, setRouteForm] = useState({
+    end_location: "",
+    route_name: "",
+    start_location: "",
+  });
+  const [stopForm, setStopForm] = useState({
+    latitude: "",
+    longitude: "",
+    stop_name: "",
+  });
 
   const defaultCenter = { latitude: 14.438853366233266, longitude: 120.9607039176618 };
 
@@ -47,44 +57,53 @@ export function AdminRouteStopManagement() {
   const [confirmButton, setConfirmButton] = useState("Confirm");
   const [confirmColor, setConfirmColor] = useState("bg-blue-600");
 
+  const orderedStops = [...stops];
+  const mapStops = useMemo(() => {
+    return orderedStops
+      .filter(
+        (stop): stop is RouteStop & { latitude: number; longitude: number } =>
+          typeof stop.latitude === "number" && typeof stop.longitude === "number",
+      )
+      .map((stop) => ({
+        id: stop.id,
+        latitude: stop.latitude,
+        longitude: stop.longitude,
+        name: stop.name ?? undefined,
+      }));
+  }, [orderedStops]);
+
   async function loadRoutes() {
     const data = await routesService.getRoutes();
-    setRoutes(data);
+    setRoutes(data ?? []);
   }
 
   async function loadStops(routeId: string) {
     const data = await stopsService.getStopsByRoute(routeId);
 
-    const formatted = data.map((s: any) => ({
-      id: s.id,
-      latitude: s.latitude,
-      longitude: s.longitude,
-      name: s.stop_name,
-      is_active: s.is_active
+    const formatted = data.map((stop) => ({
+      id: stop.id,
+      is_active: stop.is_active,
+      latitude: stop.latitude,
+      longitude: stop.longitude,
+      name: stop.stop_name,
     }));
 
     setStops(formatted);
   }
 
-  function openRoute(route: Route) {
-    setSelectedRoute(route);
-    loadStops(route.id);
-  }
-
   async function loadVehicleLocations() {
     try {
       const locations = await vehicleService.getVehicleLocations();
-      setVehicleLocations(locations);
+      setVehicleLocations(locations ?? []);
     } catch (error) {
       console.error("Vehicle location load error:", error);
     }
   }
 
-  useEffect(() => {
-    loadVehicleLocations();
-    const interval = setInterval(loadVehicleLocations, 3000);
-    return () => clearInterval(interval);
-  }, []);
+  function openRoute(route: Route) {
+    setSelectedRoute(route);
+    void loadStops(route.id);
+  }
 
   async function createRoute() {
     if (editingRouteId) {
@@ -92,68 +111,65 @@ export function AdminRouteStopManagement() {
     } else {
       await routesService.createRoute(routeForm);
     }
+
     setRouteForm({
+      end_location: "",
       route_name: "",
       start_location: "",
-      end_location: ""
     });
     setEditingRouteId(null);
     setShowCreateRoute(false);
-    loadRoutes();
+    await loadRoutes();
   }
 
   async function createStop() {
-
-    if (!selectedRoute) return;
-
-    if (editingStopId) {
-
-      await stopsService.updateStop(editingStopId, {
-        stop_name: stopForm.stop_name,
-        latitude: Number(stopForm.latitude),
-        longitude: Number(stopForm.longitude)
-      });
-
-    } else {
-
-      await stopsService.createStop({
-        route_id: selectedRoute.id,
-        stop_name: stopForm.stop_name,
-        latitude: Number(stopForm.latitude),
-        longitude: Number(stopForm.longitude)
-      });
-
+    if (!selectedRoute) {
+      return;
     }
 
-    setStopForm({ stop_name: "", latitude: "", longitude: "" });
+    if (editingStopId) {
+      await stopsService.updateStop(editingStopId, {
+        latitude: Number(stopForm.latitude),
+        longitude: Number(stopForm.longitude),
+        stop_name: stopForm.stop_name,
+      });
+    } else {
+      await stopsService.createStop({
+        latitude: Number(stopForm.latitude),
+        longitude: Number(stopForm.longitude),
+        route_id: selectedRoute.id,
+        stop_name: stopForm.stop_name,
+      });
+    }
+
+    setStopForm({ latitude: "", longitude: "", stop_name: "" });
     setEditingStopId(null);
     setShowCreateStop(false);
-    loadStops(selectedRoute.id);
+    await loadStops(selectedRoute.id);
   }
 
-  async function reorderStops(newStops: any[]) {
-
-    if (!selectedRoute) return;
+  async function reorderStops(newStops: RouteStop[]) {
+    if (!selectedRoute) {
+      return;
+    }
 
     setStops(newStops);
 
     const updates = newStops.map((stop, index) => ({
       id: stop.id,
-      stop_order: index + 1
+      stop_order: index + 1,
     }));
 
     await stopsService.updateStopOrder(selectedRoute.id, updates);
-
   }
 
   async function publishRoute() {
-
-    if (!selectedRoute) return;
+    if (!selectedRoute) {
+      return;
+    }
 
     setConfirmTitle("Publish Route");
-    setConfirmMessage(
-      "This will make the latest route changes visible to drivers and passengers."
-    );
+    setConfirmMessage("This will make the latest route changes visible to drivers and passengers.");
     setConfirmButton("Publish");
     setConfirmColor("bg-orange-600");
 
@@ -161,21 +177,19 @@ export function AdminRouteStopManagement() {
       setIsPublishing(true);
       await routesService.publishRoute(selectedRoute.id);
 
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
       await loadStops(selectedRoute.id);
       await loadRoutes();
 
       setIsPublishing(false);
       setShowPublishSuccess(true);
-
     });
 
     setShowActionConfirm(true);
   }
 
   function deleteStop(id: string) {
-
     setConfirmTitle("Delete Stop");
     setConfirmMessage("Are you sure you want to delete this stop?");
     setConfirmButton("Delete");
@@ -183,118 +197,118 @@ export function AdminRouteStopManagement() {
 
     setConfirmAction(() => async () => {
       await stopsService.deleteStop(id);
-      if (selectedRoute) loadStops(selectedRoute.id);
+      if (selectedRoute) {
+        await loadStops(selectedRoute.id);
+      }
     });
 
     setShowActionConfirm(true);
-
   }
 
   function toggleStop(id: string, isActive: boolean) {
-
     setConfirmTitle(isActive ? "Activate Stop" : "Deactivate Stop");
-
     setConfirmMessage(
       isActive
         ? "This stop will become visible to passengers and drivers."
-        : "This stop will be hidden from passengers and drivers."
+        : "This stop will be hidden from passengers and drivers.",
     );
-
     setConfirmButton(isActive ? "Activate" : "Deactivate");
     setConfirmColor(isActive ? "bg-green-600" : "bg-red-600");
 
     setConfirmAction(() => async () => {
       await stopsService.toggleStopStatus(id, isActive);
-      if (selectedRoute) loadStops(selectedRoute.id);
+      if (selectedRoute) {
+        await loadStops(selectedRoute.id);
+      }
     });
 
     setShowActionConfirm(true);
   }
 
   function deleteRoute(id: string) {
-
     setConfirmTitle("Delete Route");
     setConfirmMessage("Are you sure you want to delete this route? All stops will also be removed.");
     setConfirmButton("Delete");
     setConfirmColor("bg-red-600");
 
     setConfirmAction(() => async () => {
-
       try {
-
         await routesService.deleteRoute(id);
-
         await loadRoutes();
 
         if (selectedRoute?.id === id) {
           setSelectedRoute(null);
           setStops([]);
         }
-
-      } catch (err: any) {
-
-        alert(
-          err?.response?.data?.error ||
-          "Failed to delete route."
-        );
-
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "Failed to delete route.";
+        alert(errorMessage);
       }
-
     });
 
     setShowActionConfirm(true);
-
   }
 
   function editRoute(route: Route) {
-
     setEditingRouteId(route.id);
-
     setRouteForm({
+      end_location: route.end_location || "",
       route_name: route.route_name,
       start_location: route.start_location || "",
-      end_location: route.end_location || ""
     });
-
     setShowCreateRoute(true);
-
   }
 
-  function openEditStop(stop: any) {
+  function openEditStop(stop: RouteStop) {
     setEditingStopId(stop.id);
     setStopForm({
-      stop_name: stop.name,
-      latitude: String(stop.latitude),
-      longitude: String(stop.longitude)
+      latitude: String(stop.latitude ?? ""),
+      longitude: String(stop.longitude ?? ""),
+      stop_name: stop.name ?? "",
     });
     setShowCreateStop(true);
   }
 
-  function handleMapRightClick(coords: { latitude: number; longitude: number }) {
+  function handleMapRightClick(coords: StopCoords) {
     setPendingCoords(coords);
     setShowConfirm(true);
   }
 
   function confirmCoords() {
-    if (!pendingCoords) return;
-    setStopForm({ ...stopForm, latitude: String(pendingCoords.latitude), longitude: String(pendingCoords.longitude) });
+    if (!pendingCoords) {
+      return;
+    }
+
+    setStopForm({
+      ...stopForm,
+      latitude: String(pendingCoords.latitude),
+      longitude: String(pendingCoords.longitude),
+    });
     setShowConfirm(false);
     setShowSelectMap(false);
   }
 
-  useEffect(() => { loadRoutes() }, []);
+  useEffect(() => {
+    void loadVehicleLocations();
 
-  const orderedStops = [...stops];
+    const interval = window.setInterval(() => {
+      void loadVehicleLocations();
+    }, 3000);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    void loadRoutes();
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-
       const target = event.target as HTMLElement;
 
       if (!target.closest(".route-menu")) {
         setRouteMenuOpen(null);
       }
-
     }
 
     document.addEventListener("click", handleClickOutside);
@@ -304,84 +318,117 @@ export function AdminRouteStopManagement() {
     };
   }, []);
 
-
-
   return (
-    <div className="p-2 h-full flex flex-col overflow-hidden">
-      <div className="grid grid-cols-3 gap-4 flex-1 min-h-0">
-        {/* ROUTES PANEL */}
-        <div className="col-span-1 bg-white border rounded-xl flex flex-col h-full min-h-0 p-2">
-          <div className="flex justify-between items-center p-3 border-b">
-            <h2 className="font-semibold">Routes</h2>
+    <div className="space-y-5">
+      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700/60">
+              Route Builder
+            </p>
+            <h1 className="mt-2 text-2xl font-semibold text-slate-900 sm:text-3xl">
+              Route & Stop Management
+            </h1>
+            <p className="mt-2 text-sm text-slate-500 sm:text-base">
+              Create routes, arrange stops, and preview the live network in a layout that stays usable
+              on both mobile and desktop.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <StatPill label="Routes" value={routes.length} />
+            <StatPill label="Stops" value={stops.length} />
+            <StatPill label="Tracked vehicles" value={vehicleLocations.length} />
+          </div>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 gap-4 2xl:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.6fr)]">
+        <section className="flex min-h-[320px] flex-col rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">Routes</h2>
+              <p className="text-sm text-slate-500">Choose a route to manage stops and map views.</p>
+            </div>
+
             <button
+              className="inline-flex items-center gap-2 rounded-2xl bg-orange-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-orange-700"
               onClick={() => setShowCreateRoute(true)}
-              className="flex items-center gap-2 bg-orange-600 text-white px-3 py-2 rounded-lg hover:bg-orange-700"
+              type="button"
             >
               <Plus size={16} />
+              <span className="hidden sm:inline">New Route</span>
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto space-y-2">
-            {routes.map(route => (
-              <div key={route.id} className={`bg-white border mt-2 rounded-xl p-4 shadow hover:shadow-lg transition cursor-pointer ${selectedRoute?.id === route.id ? "border-orange-500" : ""}`} onClick={() => openRoute(route)}>
-
-                <div className="flex justify-between items-start">
-
-                  <div>
-                    <h2 className="font-semibold">{route.route_name}</h2>
-                    <div className="text-sm text-gray-500">
-                      {route.start_location} → {route.end_location}
+          <div className="mt-4 flex-1 space-y-3 overflow-y-auto pr-1">
+            {routes.map((route) => (
+              <div
+                key={route.id}
+                className={`cursor-pointer rounded-[22px] border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                  selectedRoute?.id === route.id
+                    ? "border-orange-500 bg-orange-50/50"
+                    : "border-slate-200 bg-white"
+                }`}
+                onClick={() => openRoute(route)}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h2 className="font-semibold text-slate-900">{route.route_name}</h2>
+                    <div className="mt-1 text-sm text-slate-500">
+                      {route.start_location} {"->"} {route.end_location}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 ">
-
+                  <div className="flex items-center gap-2">
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
+                      className="rounded-xl border border-transparent p-2 text-orange-600 transition hover:border-orange-100 hover:bg-orange-50 hover:text-orange-800"
+                      onClick={(event) => {
+                        event.stopPropagation();
                         setSelectedRoute(route);
-                        loadStops(route.id);
+                        void loadStops(route.id);
                         setShowRouteMap(true);
                       }}
-                      className="text-orange-600 hover:text-orange-800"
+                      type="button"
                     >
-                      <Map size={20} />
+                      <Map size={18} />
                     </button>
 
                     <div className="relative route-menu">
-
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
+                        className="rounded-xl border border-transparent p-2 text-slate-500 transition hover:border-slate-200 hover:bg-slate-50 hover:text-slate-900"
+                        onClick={(event) => {
+                          event.stopPropagation();
                           setRouteMenuOpen(routeMenuOpen === route.id ? null : route.id);
                         }}
+                        type="button"
                       >
                         <MoreVertical size={18} />
                       </button>
 
                       {routeMenuOpen === route.id && (
-
-                        <div className="absolute right-0 mt-2 bg-white border rounded-lg shadow-md w-36 z-10">
-
+                        <div className="absolute right-0 z-10 mt-2 w-40 rounded-2xl border border-slate-200 bg-white p-1 shadow-lg">
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
+                            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100"
+                            onClick={(event) => {
+                              event.stopPropagation();
                               editRoute(route);
                               setRouteMenuOpen(null);
                             }}
-                            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-gray-100"
+                            type="button"
                           >
                             <Pencil size={14} />
                             Edit
                           </button>
 
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
+                            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-red-600 transition hover:bg-red-50"
+                            onClick={(event) => {
+                              event.stopPropagation();
                               deleteRoute(route.id);
                               setRouteMenuOpen(null);
                             }}
-                            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                            type="button"
                           >
                             <Trash2 size={14} />
                             Delete
@@ -394,123 +441,170 @@ export function AdminRouteStopManagement() {
               </div>
             ))}
           </div>
-        </div>
-        <div className="col-span-2 flex flex-col min-h-0">
+        </section>
+
+        <div className="flex min-h-[320px] flex-col">
           {selectedRoute ? (
-            <div className="flex flex-col flex-1 min-h-0 space-y-3">
+            <div className="flex flex-1 flex-col space-y-4">
+              <section className="rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      Active Route
+                    </p>
+                    <h2 className="mt-2 text-xl font-semibold text-slate-900">
+                      {selectedRoute.route_name}
+                    </h2>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Manage stop order, publish updates, or open the route map.
+                    </p>
+                  </div>
 
-              <div className="flex justify-between items-center">
-                <button
-                  onClick={publishRoute}
-                  disabled={isPublishing}
-                  className={`px-3 py-1 text-sm rounded text-white ${isPublishing ? "bg-gray-400 cursor-not-allowed" : "bg-orange-600 hover:bg-orange-700"}`}
-                >
-                  {isPublishing ? "Publishing..." : "Publish"}
-                </button>
-                <h2 className="text-lg font-semibold">
-                  Stops for: {selectedRoute.route_name}
-                </h2>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <button
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-700"
+                      onClick={() => setShowCreateStop(true)}
+                      type="button"
+                    >
+                      <Plus size={16} />
+                      Add Stop
+                    </button>
 
-
-                <button
-                  onClick={() => setShowCreateStop(true)}
-                  className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                >
-                  <Plus size={16} />
-                </button>
-              </div>
+                    <button
+                      className={`inline-flex items-center justify-center rounded-2xl px-4 py-2.5 text-sm font-medium text-white transition ${
+                        isPublishing
+                          ? "cursor-not-allowed bg-slate-400"
+                          : "bg-orange-600 hover:bg-orange-700"
+                      }`}
+                      disabled={isPublishing}
+                      onClick={() => void publishRoute()}
+                      type="button"
+                    >
+                      {isPublishing ? "Publishing..." : "Publish Route"}
+                    </button>
+                  </div>
+                </div>
+              </section>
 
               <StopsTable
-                stops={stops}
                 onDelete={deleteStop}
-                onToggle={toggleStop}
                 onEdit={openEditStop}
                 onReorder={reorderStops}
+                onToggle={toggleStop}
+                stops={stops}
               />
             </div>
           ) : (
-            <div className="flex items-center justify-center h-[200px] border rounded-xl bg-gray-50 text-gray-500">
-              Select a route to display its stops in this panel.
+            <div className="flex min-h-[280px] items-center justify-center rounded-[26px] border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500 shadow-sm">
+              Select a route to display and manage its stops here.
             </div>
-
           )}
         </div>
       </div>
-      {showCreateStop && (
-        <div className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-xl w-[420px] space-y-4">
 
-            <div className="flex justify-between">
-              <h2 className="font-semibold text-lg">Create Stop</h2>
-              <button onClick={() => setShowCreateStop(false)}><X /></button>
+      {showCreateStop && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4">
+          <div className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-[26px] bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-slate-900">
+                {editingStopId ? "Edit Stop" : "Create Stop"}
+              </h2>
+              <button
+                className="rounded-full border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-50"
+                onClick={() => setShowCreateStop(false)}
+                type="button"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <input placeholder="Stop Name" className="border p-2 rounded w-full" value={stopForm.stop_name} onChange={e => setStopForm({ ...stopForm, stop_name: e.target.value })} />
-            <input placeholder="Latitude" className="border p-2 rounded w-full" value={stopForm.latitude} onChange={e => setStopForm({ ...stopForm, latitude: e.target.value })} />
-            <input placeholder="Longitude" className="border p-2 rounded w-full" value={stopForm.longitude} onChange={e => setStopForm({ ...stopForm, longitude: e.target.value })} />
-
-            <button onClick={() => setShowSelectMap(true)} className="flex items-center gap-2 border px-3 py-2 rounded hover:bg-gray-100"><MapPin size={16} />Select From Map</button>
+            <input
+              className="w-full rounded-2xl border border-slate-200 p-3"
+              onChange={(event) => setStopForm({ ...stopForm, stop_name: event.target.value })}
+              placeholder="Stop Name"
+              value={stopForm.stop_name}
+            />
+            <input
+              className="w-full rounded-2xl border border-slate-200 p-3"
+              onChange={(event) => setStopForm({ ...stopForm, latitude: event.target.value })}
+              placeholder="Latitude"
+              value={stopForm.latitude}
+            />
+            <input
+              className="w-full rounded-2xl border border-slate-200 p-3"
+              onChange={(event) => setStopForm({ ...stopForm, longitude: event.target.value })}
+              placeholder="Longitude"
+              value={stopForm.longitude}
+            />
 
             <button
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              onClick={() => setShowSelectMap(true)}
+              type="button"
+            >
+              <MapPin size={16} />
+              Select From Map
+            </button>
+
+            <button
+              className="w-full rounded-2xl bg-blue-600 py-3 text-sm font-medium text-white transition hover:bg-blue-700"
               onClick={() => {
-
                 setConfirmTitle(editingStopId ? "Save Changes" : "Create Stop");
-
                 setConfirmMessage(
                   editingStopId
                     ? "Are you sure you want to update this stop?"
-                    : "Are you sure you want to create this stop?"
+                    : "Are you sure you want to create this stop?",
                 );
-
                 setConfirmButton("Confirm");
                 setConfirmColor("bg-blue-600");
-
                 setConfirmAction(() => createStop);
-
                 setShowActionConfirm(true);
-
               }}
-              className="w-full bg-blue-600 text-white py-2 rounded"
+              type="button"
             >
-              Save Stop
+              {editingStopId ? "Save Changes" : "Save Stop"}
             </button>
-
           </div>
         </div>
       )}
 
       {showCreateRoute && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-
-          <div className="bg-white p-6 rounded-xl w-[420px] space-y-4" >
-
-            <div className="flex justify-between">
-              <h2 className="font-semibold text-lg">Create Route</h2>
-              <button onClick={() => setShowCreateRoute(false)}><X /></button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4">
+          <div className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-[26px] bg-white p-6 shadow-xl">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-slate-900">
+                {editingRouteId ? "Edit Route" : "Create Route"}
+              </h2>
+              <button
+                className="rounded-full border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-50"
+                onClick={() => setShowCreateRoute(false)}
+                type="button"
+              >
+                <X size={18} />
+              </button>
             </div>
 
             <input
+              className="w-full rounded-2xl border border-slate-200 p-3"
+              onChange={(event) => setRouteForm({ ...routeForm, route_name: event.target.value })}
               placeholder="Route Name"
-              className="border p-2 rounded w-full"
               value={routeForm.route_name}
-              onChange={e => setRouteForm({ ...routeForm, route_name: e.target.value })}
             />
-
             <input
+              className="w-full rounded-2xl border border-slate-200 p-3"
+              onChange={(event) => setRouteForm({ ...routeForm, start_location: event.target.value })}
               placeholder="Start Terminal"
-              className="border p-2 rounded w-full"
               value={routeForm.start_location}
-              onChange={e => setRouteForm({ ...routeForm, start_location: e.target.value })}
             />
-
             <input
+              className="w-full rounded-2xl border border-slate-200 p-3"
+              onChange={(event) => setRouteForm({ ...routeForm, end_location: event.target.value })}
               placeholder="End Terminal"
-              className="border p-2 rounded w-full"
               value={routeForm.end_location}
-              onChange={e => setRouteForm({ ...routeForm, end_location: e.target.value })}
             />
 
             <button
+              className="w-full rounded-2xl bg-blue-600 py-3 text-sm font-medium text-white transition hover:bg-blue-700"
               onClick={() => {
                 setConfirmTitle("Confirm");
                 setConfirmMessage("Are you sure you want to save this route?");
@@ -519,7 +613,7 @@ export function AdminRouteStopManagement() {
                 setConfirmAction(() => createRoute);
                 setShowActionConfirm(true);
               }}
-              className="w-full bg-blue-600 text-white py-2 rounded"
+              type="button"
             >
               Save Route
             </button>
@@ -528,103 +622,124 @@ export function AdminRouteStopManagement() {
       )}
 
       {showRouteMap && selectedRoute && (
-        <div className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center">
-          <div className="bg-white p-4 rounded-xl w-[1100px] space-y-3">
-
-            <div className="flex justify-between">
-              <h2 className="font-semibold">{selectedRoute.route_name} Stops</h2>
-              <button onClick={() => setShowRouteMap(false)}><X /></button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4">
+          <div className="flex h-[min(88vh,760px)] w-full max-w-6xl flex-col space-y-3 rounded-[28px] bg-white p-4 shadow-xl sm:p-5">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-semibold text-slate-900">{selectedRoute.route_name} Stops</h2>
+              <button
+                className="rounded-full border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-50"
+                onClick={() => setShowRouteMap(false)}
+                type="button"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <div className="h-[450px]">
+            <div className="min-h-0 flex-1 overflow-hidden rounded-[22px] border border-slate-100">
               <SharedMap
-                stops={selectedRoute ? orderedStops : []}
-                initialCenter={defaultCenter}
                 bearing={100}
+                initialCenter={defaultCenter}
                 initialZoom={11.5}
+                stops={selectedRoute ? mapStops : []}
                 vehicles={vehicleLocations}
               />
             </div>
-
           </div>
         </div>
       )}
 
       {showSelectMap && (
-        <div className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center">
-          <div className="bg-white p-4 rounded-xl w-[800px] space-y-3">
-
-            <div className="flex justify-between">
-              <h2 className="font-semibold">Select Coordinate</h2>
-              <button onClick={() => setShowSelectMap(false)}><X /></button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4">
+          <div className="flex h-[min(88vh,700px)] w-full max-w-4xl flex-col space-y-3 rounded-[28px] bg-white p-4 shadow-xl sm:p-5">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="font-semibold text-slate-900">Select Coordinate</h2>
+              <button
+                className="rounded-full border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-50"
+                onClick={() => setShowSelectMap(false)}
+                type="button"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            <div className="h-[400px]">
-              <SharedMap stops={[]} initialCenter={defaultCenter} onRightClick={(coords) => handleMapRightClick(coords)} />
+            <div className="min-h-0 flex-1 overflow-hidden rounded-[22px] border border-slate-100">
+              <SharedMap
+                initialCenter={defaultCenter}
+                onRightClick={(coords) => handleMapRightClick(coords)}
+                stops={[]}
+              />
             </div>
-
           </div>
         </div>
       )}
 
       {showConfirm && pendingCoords && (
-        <div className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center" onClick={() => setShowConfirm(false)}>
-          <div className="bg-white p-6 rounded-xl w-[360px] space-y-4">
-
-            <h2 className="font-semibold text-lg">Confirm Coordinate</h2>
-
-            <p className="text-sm text-gray-600">Use this coordinate for the stop?</p>
-
-            <div className="text-sm text-gray-500">Lat: {pendingCoords.latitude} | Lng: {pendingCoords.longitude}</div>
-
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setShowConfirm(false)} className="px-3 py-2 border rounded">Cancel</button>
-              <button onClick={confirmCoords} className="px-3 py-2 bg-blue-600 text-white rounded">Confirm</button>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4" onClick={() => setShowConfirm(false)}>
+          <div className="w-full max-w-md space-y-4 rounded-[24px] bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-slate-900">Confirm Coordinate</h2>
+            <p className="text-sm text-slate-600">Use this coordinate for the stop?</p>
+            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
+              Lat: {pendingCoords.latitude} | Lng: {pendingCoords.longitude}
             </div>
-
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                onClick={() => setShowConfirm(false)}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+                onClick={confirmCoords}
+                type="button"
+              >
+                Confirm
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {showPublishSuccess && (
-        <div className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center">
-
-          <div className="bg-white p-6 rounded-xl w-[360px] text-center space-y-4">
-
-            <h2 className="text-lg font-semibold text-green-600">
-              Publish Complete
-            </h2>
-
-            <p className="text-sm text-gray-600">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md space-y-4 rounded-[24px] bg-white p-6 text-center shadow-xl">
+            <h2 className="text-lg font-semibold text-green-600">Publish Complete</h2>
+            <p className="text-sm text-slate-600">
               The updated route is now visible to drivers and passengers.
             </p>
-
             <button
+              className="rounded-2xl bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
               onClick={() => setShowPublishSuccess(false)}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              type="button"
             >
               Close
             </button>
-
           </div>
-
         </div>
       )}
 
       {showActionConfirm && (
-        <div className="fixed inset-0 z-[100] bg-black/40 flex items-center justify-center" onClick={() => setShowActionConfirm(false)}>
-          <div className="bg-white p-6 rounded-xl w-[360px] space-y-4">
-            <h2 className="font-semibold text-lg">{confirmTitle}</h2>
-            <p className="text-sm text-gray-600">{confirmMessage}</p>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setShowActionConfirm(false)} className="px-3 py-2 border rounded">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4" onClick={() => setShowActionConfirm(false)}>
+          <div className="w-full max-w-md space-y-4 rounded-[24px] bg-white p-6 shadow-xl" onClick={(event) => event.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-slate-900">{confirmTitle}</h2>
+            <p className="text-sm text-slate-600">{confirmMessage}</p>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                onClick={() => setShowActionConfirm(false)}
+                type="button"
+              >
                 Cancel
               </button>
 
               <button
-                disabled={false}
+                className={`rounded-2xl px-4 py-2 text-sm font-medium text-white ${confirmColor}`}
                 onClick={async () => {
-                  if (!confirmAction) return;
+                  if (!confirmAction) {
+                    return;
+                  }
+
                   try {
                     showLoading();
                     await confirmAction();
@@ -633,7 +748,7 @@ export function AdminRouteStopManagement() {
                     setShowActionConfirm(false);
                   }
                 }}
-                className={`px-3 py-2 text-white rounded ${confirmColor}`}
+                type="button"
               >
                 {confirmButton}
               </button>
@@ -641,6 +756,20 @@ export function AdminRouteStopManagement() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+type StatPillProps = {
+  label: string;
+  value: number;
+};
+
+function StatPill({ label, value }: StatPillProps) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+      <p className="text-sm text-slate-500">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-slate-900">{value}</p>
     </div>
   );
 }

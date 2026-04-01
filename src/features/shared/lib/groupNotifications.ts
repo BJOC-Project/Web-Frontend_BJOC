@@ -1,6 +1,12 @@
-export function groupNotifications(notifications: any[]) {
+type NotificationWithCreatedAt = {
+  created_at: string;
+};
 
-  const groups: Record<string, any[]> = {};
+export function groupNotifications<T extends NotificationWithCreatedAt>(
+  notifications: T[]
+) {
+
+  const groups: Record<string, T[]> = {};
 
   const now = new Date();
 

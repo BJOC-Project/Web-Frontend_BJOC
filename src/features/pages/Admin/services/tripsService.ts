@@ -1,32 +1,24 @@
 import api from "@/features/shared/services/api";
+import { extractApiData } from "@/features/shared/services/extractApiData";
 
 export const tripsService = {
 
-  /* -------------------------
-     GET SCHEDULED + ACTIVE TRIPS
-  --------------------------*/
   async getActiveTrips() {
 
     const res = await api.get("/trips/active");
 
-    return res.data ?? [];
+    return extractApiData<any[]>(res.data) ?? [];
 
   },
 
-  /* -------------------------
-     GET TRIP HISTORY
-  --------------------------*/
   async getTripHistory() {
 
     const res = await api.get("/trips/history");
 
-    return res.data ?? [];
+    return extractApiData<any[]>(res.data) ?? [];
 
   },
 
-  /* -------------------------
-     ADMIN: SCHEDULE TRIP
-  --------------------------*/
   async scheduleTrip(payload: {
     vehicle_id: string;
     route_id: string;
@@ -36,46 +28,34 @@ export const tripsService = {
 
     const res = await api.post("/trips/schedule", payload);
 
-    return res.data;
+    return extractApiData(res.data);
 
   },
 
-  /* -------------------------
-     DRIVER: START TRIP
-  --------------------------*/
   async startTrip(id: string) {
 
     const res = await api.patch(`/trips/${id}/start`);
 
-    return res.data;
+    return extractApiData(res.data);
 
   },
 
-  /* -------------------------
-     DRIVER: END TRIP
-  --------------------------*/
   async endTrip(id: string) {
 
     const res = await api.patch(`/trips/${id}/end`);
 
-    return res.data;
+    return extractApiData(res.data);
 
   },
 
-  /* -------------------------
-     CANCEL TRIP
-  --------------------------*/
   async cancelTrip(id: string) {
 
     const res = await api.patch(`/trips/${id}/cancel`);
 
-    return res.data;
+    return extractApiData(res.data);
 
   },
 
-  /* -------------------------
-     RESCHEDULE TRIP
-  --------------------------*/
   async rescheduleTrip(
     id: string,
     payload: { scheduled_departure_time: string }
@@ -83,7 +63,7 @@ export const tripsService = {
 
     const res = await api.patch(`/trips/${id}/reschedule`, payload);
 
-    return res.data;
+    return extractApiData(res.data);
 
   }
 

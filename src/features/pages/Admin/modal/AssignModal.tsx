@@ -1,4 +1,6 @@
 import { X } from "lucide-react";
+import type { Dispatch, SetStateAction } from "react";
+
 import type { Driver, Vehicle } from "@/features";
 
 type AssignForm = {
@@ -7,14 +9,14 @@ type AssignForm = {
 };
 
 type Props = {
-  open: boolean;
   drivers: Driver[];
-  vehicles: Vehicle[];
-  mode: "driver" | "vehicle" | null;
   form: AssignForm;
-  setForm: React.Dispatch<React.SetStateAction<AssignForm>>;
+  mode: "driver" | "vehicle" | null;
   onAssign: () => void;
   onClose: () => void;
+  open: boolean;
+  setForm: Dispatch<SetStateAction<AssignForm>>;
+  vehicles: Vehicle[];
 };
 
 export function AssignModal({
@@ -25,83 +27,105 @@ export function AssignModal({
   form,
   setForm,
   onAssign,
-  onClose
+  onClose,
 }: Props) {
+  if (!open) {
+    return null;
+  }
 
-  if (!open) return null;
+  const title = mode === "driver" ? "Assign Vehicle" : "Assign Driver";
+  const helperText =
+    mode === "driver"
+      ? "Choose a vehicle for the selected driver."
+      : "Choose a driver for the selected vehicle.";
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-[28px] bg-white p-5 shadow-2xl sm:p-6"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900">{title}</h2>
+            <p className="mt-1 text-sm text-slate-500">{helperText}</p>
+          </div>
 
-      <div className="bg-white p-6 rounded-xl w-[300px] space-y-4">
-
-        <div className="flex justify-between items-center">
-
-          <h2 className="font-semibold text-lg">
-            Assign
-          </h2>
-
-          <button onClick={onClose}>
-            <X />
+          <button
+            className="rounded-full border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
+            onClick={onClose}
+            type="button"
+          >
+            <X size={18} />
           </button>
-
         </div>
 
         {mode === "driver" && (
-
-          <select
-            className="border p-2 rounded w-full"
-            value={form.vehicle_id}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                vehicle_id: e.target.value
-              })
-            }
-          >
-            <option value="">Select Vehicle</option>
-
-            {vehicles.map(v => (
-              <option key={v.id} value={v.id}>
-                {v.plate_number} - {v.model}
-              </option>
-            ))}
-
-          </select>
-
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-slate-600">Vehicle</span>
+            <select
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-500"
+              onChange={(event) =>
+                setForm((previous) => ({
+                  ...previous,
+                  vehicle_id: event.target.value,
+                }))
+              }
+              value={form.vehicle_id}
+            >
+              <option value="">Select Vehicle</option>
+              {vehicles.map((vehicle) => (
+                <option key={vehicle.id} value={vehicle.id}>
+                  {vehicle.plate_number} - {vehicle.model}
+                </option>
+              ))}
+            </select>
+          </label>
         )}
 
         {mode === "vehicle" && (
-
-          <select
-            className="border p-2 rounded w-full"
-            value={form.driver_id}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                driver_id: e.target.value
-              })
-            }
-          >
-            <option value="">Select Driver</option>
-
-            {drivers.map(d => (
-              <option key={d.id} value={d.id} className="border p-2 rounded w-full">
-                {d.first_name} {d.last_name}
-              </option>
-            ))}
-          </select>
+          <label className="block">
+            <span className="mb-2 block text-sm font-medium text-slate-600">Driver</span>
+            <select
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-sky-500"
+              onChange={(event) =>
+                setForm((previous) => ({
+                  ...previous,
+                  driver_id: event.target.value,
+                }))
+              }
+              value={form.driver_id}
+            >
+              <option value="">Select Driver</option>
+              {drivers.map((driver) => (
+                <option key={driver.id} value={driver.id}>
+                  {driver.first_name} {driver.last_name}
+                </option>
+              ))}
+            </select>
+          </label>
         )}
 
-        <button
-          onClick={onAssign}
-          className="w-full bg-blue-600 text-white py-2 rounded-lg"
-        >
-          Assign
-        </button>
-
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <button
+            className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            onClick={onClose}
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            className="rounded-2xl bg-sky-600 px-4 py-3 text-sm font-medium text-white transition hover:bg-sky-700"
+            onClick={onAssign}
+            type="button"
+          >
+            Assign
+          </button>
+        </div>
       </div>
-
     </div>
   );
 }

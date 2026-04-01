@@ -1,4 +1,5 @@
 import api from "@/features/shared/services/api";
+import { extractApiData } from "@/features/shared/services/extractApiData";
 
 export const driverService = {
 
@@ -6,7 +7,7 @@ export const driverService = {
 
     const res = await api.get("/drivers");
 
-    return res.data;
+    return extractApiData(res.data);
 
   },
 
@@ -22,7 +23,7 @@ export const driverService = {
 
     const res = await api.post("/drivers", data);
 
-    return res.data;
+    return extractApiData(res.data);
 
   },
 
@@ -30,7 +31,7 @@ export const driverService = {
 
     const res = await api.put(`/drivers/${id}`, data);
 
-    return res.data;
+    return extractApiData(res.data);
 
   },
 
@@ -38,7 +39,7 @@ export const driverService = {
 
     const res = await api.delete(`/drivers/${id}`);
 
-    return res.data;
+    return extractApiData(res.data);
 
   }
 

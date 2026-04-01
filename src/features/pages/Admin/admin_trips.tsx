@@ -1,300 +1,287 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { CalendarClock, Route, TimerReset } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { useLoading } from "@/features/shared/context/LoadingContext";
-
-import { vehicleService } from "./services/vehicleService";
-import { tripsService } from "./services/tripsService";
 import { routesService } from "./services/routesService";
-
-import { FleetVehicleCard } from "./modal/FleetVehicleCard";
+import { tripsService } from "./services/tripsService";
+import { vehicleService } from "./services/vehicleService";
 import { ActiveTripsTable } from "./modal/ActiveTripsTable";
-import { TripHistoryCard } from "./modal/TripHistoryCard";
-import { DispatchTripModal } from "./modal/DispatchTripModal";
-import { RescheduleTripModal } from "./modal/RescheduleTripModal";
 import { ConfirmTripModal } from "./modal/ConfirmTripModal";
+import { DispatchTripModal } from "./modal/DispatchTripModal";
+import { FleetVehicleCard } from "./modal/FleetVehicleCard";
+import { RescheduleTripModal } from "./modal/RescheduleTripModal";
+import { TripHistoryCard } from "./modal/TripHistoryCard";
 
 export function AdminTrips() {
+  const navigate = useNavigate();
+  const { showLoading, hideLoading } = useLoading();
 
-    const navigate = useNavigate();
-    const { showLoading, hideLoading } = useLoading();
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [activeTrips, setActiveTrips] = useState<any[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
+  const [routes, setRoutes] = useState<any[]>([]);
+  const [dispatchOpen, setDispatchOpen] = useState(false);
+  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
+  const [selectedTrip, setSelectedTrip] = useState<any>(null);
+  const [confirmScheduleOpen, setConfirmScheduleOpen] = useState(false);
+  const [pendingVehicle, setPendingVehicle] = useState<any>(null);
+  const [confirmAction, setConfirmAction] = useState<"cancel" | "reschedule" | null>(null);
 
-    const [vehicles, setVehicles] = useState<any[]>([]);
-    const [activeTrips, setActiveTrips] = useState<any[]>([]);
-    const [history, setHistory] = useState<any[]>([]);
-    const [routes, setRoutes] = useState<any[]>([]);
+  const loadingRef = useRef(false);
 
-    const [dispatchOpen, setDispatchOpen] = useState(false);
-    const [rescheduleOpen, setRescheduleOpen] = useState(false);
-    const [confirmOpen, setConfirmOpen] = useState(false);
+  async function load(withLoading = false) {
+    if (loadingRef.current) {
+      return;
+    }
 
-    const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
-    const [selectedTrip, setSelectedTrip] = useState<any>(null);
+    loadingRef.current = true;
 
-    const [confirmScheduleOpen, setConfirmScheduleOpen] = useState(false);
-    const [pendingVehicle, setPendingVehicle] = useState<any>(null);
+    if (withLoading) {
+      showLoading();
+    }
 
-    const [confirmAction, setConfirmAction] = useState<
-        "cancel" | "reschedule" | null
-    >(null);
+    try {
+      const [vehiclesData, activeTripsData, historyData, routesData] = await Promise.all([
+        vehicleService.getVehicles(),
+        tripsService.getActiveTrips(),
+        tripsService.getTripHistory(),
+        routesService.getRoutes(),
+      ]);
 
-    const loadingRef = useRef(false);
+      setRoutes(routesData ?? []);
+      setActiveTrips(activeTripsData ?? []);
+      setHistory(historyData ?? []);
 
-    const load = async (withLoading = false) => {
+      const enrichedVehicles = (vehiclesData ?? []).map((vehicle: any) => {
+        const scheduledTrip = (activeTripsData ?? []).find(
+          (trip: any) => trip.vehicle_id === vehicle.id && trip.status === "scheduled",
+        );
 
-        if (loadingRef.current) return;
+        const ongoingTrip = (activeTripsData ?? []).find(
+          (trip: any) => trip.vehicle_id === vehicle.id && trip.status === "ongoing",
+        );
 
-        loadingRef.current = true;
+        const tripsToday = (historyData ?? []).filter((trip: any) => trip.vehicle_id === vehicle.id).length;
 
-        if (withLoading) showLoading();
+        return {
+          ...vehicle,
+          available: !scheduledTrip && !ongoingTrip,
+          ongoing: Boolean(ongoingTrip),
+          scheduled: Boolean(scheduledTrip),
+          trips_today: tripsToday,
+        };
+      });
 
-        try {
+      setVehicles(enrichedVehicles);
+    } catch (error) {
+      console.error("Trips load error:", error);
+    } finally {
+      if (withLoading) {
+        hideLoading();
+      }
 
-            const [v, a, h, r] = await Promise.all([
-                vehicleService.getVehicles(),
-                tripsService.getActiveTrips(),
-                tripsService.getTripHistory(),
-                routesService.getRoutes()
-            ]);
+      loadingRef.current = false;
+    }
+  }
 
-            setRoutes(r ?? []);
-            setActiveTrips(a ?? []);
-            setHistory(h ?? []);
+  useEffect(() => {
+    void load(true);
 
-            const enriched = (v ?? []).map((veh: any) => {
+    const interval = window.setInterval(() => {
+      void load(false);
+    }, 15000);
 
-                const scheduledTrip = (a ?? []).find(
-                    (t: any) =>
-                        t.vehicle_id === veh.id &&
-                        t.status === "scheduled"
-                );
+    return () => window.clearInterval(interval);
+  }, []);
 
-                const ongoingTrip = (a ?? []).find(
-                    (t: any) =>
-                        t.vehicle_id === veh.id &&
-                        t.status === "ongoing"
-                );
+  function openDispatch(vehicle: any) {
+    if (vehicle.ongoing) {
+      alert("Vehicle is currently on a trip.");
+      return;
+    }
 
-                const tripsToday = (h ?? []).filter(
-                    (t: any) => t.vehicle_id === veh.id
-                ).length;
+    if (vehicle.scheduled) {
+      setPendingVehicle(vehicle);
+      setConfirmScheduleOpen(true);
+      return;
+    }
 
-                return {
-                    ...veh,
-                    scheduled: !!scheduledTrip,
-                    ongoing: !!ongoingTrip,
-                    available: !scheduledTrip && !ongoingTrip,
-                    trips_today: tripsToday
-                };
+    setSelectedVehicle(vehicle);
+    setDispatchOpen(true);
+  }
 
-            });
+  function cancelTrip(trip: any) {
+    setSelectedTrip(trip);
+    setConfirmAction("cancel");
+    setConfirmOpen(true);
+  }
 
-            setVehicles(enriched);
+  function rescheduleTrip(trip: any) {
+    setSelectedTrip(trip);
+    setRescheduleOpen(true);
+  }
 
-        } catch (err) {
+  return (
+    <div className="space-y-5">
+      <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700/60">
+              Trip Operations
+            </p>
+            <h1 className="mt-2 text-2xl font-semibold text-slate-900 sm:text-3xl">
+              Scheduling & Live Trip Control
+            </h1>
+            <p className="mt-2 text-sm text-slate-500 sm:text-base">
+              Coordinate fleet assignments, monitor active trips, and keep recent history visible on
+              any screen size.
+            </p>
+          </div>
 
-            console.error("Trips load error:", err);
-
-        } finally {
-
-            if (withLoading) hideLoading();
-
-            loadingRef.current = false;
-
-        }
-
-    };
-
-    useEffect(() => {
-
-        load(true);
-
-        const interval = setInterval(() => load(false), 15000);
-
-        return () => clearInterval(interval);
-
-    }, []);
-
-    const openDispatch = (vehicle: any) => {
-
-        if (vehicle.ongoing) {
-            alert("Vehicle is currently on a trip.");
-            return;
-        }
-
-        if (vehicle.scheduled) {
-
-            setPendingVehicle(vehicle);
-            setConfirmScheduleOpen(true);
-            return;
-
-        }
-
-        setSelectedVehicle(vehicle);
-        setDispatchOpen(true);
-
-    };
-
-    const cancelTrip = (trip: any) => {
-        setSelectedTrip(trip);
-        setConfirmAction("cancel");
-        setConfirmOpen(true);
-    };
-
-    const rescheduleTrip = (trip: any) => {
-
-        setSelectedTrip(trip);
-        setRescheduleOpen(true);
-
-    };
-
-    return (
-
-        <div className="p-3 h-[calc(90vh-80px)] flex flex-col">
-            <div className="flex flex-col">
-                <div className="flex justify-between items-center mb-2">
-                    <h2 className="font-medium">
-                        Recent Trip History
-                    </h2>
-                    <button
-                        onClick={() => navigate("/admin/trips/history")}
-                        className="text-xs text-blue-600 hover:underline"
-                    >
-                        View All
-                    </button>
-                </div>
-
-                <div className="flex gap-2 overflow-x-auto pb-2">
-
-                    {history.length === 0 && (
-                        <p className="text-xs text-gray-400">
-                            No trip history yet
-                        </p>
-                    )}
-
-                    {history.slice(0, 10).map(t => (
-                        <div key={t.id} className="min-w-[320px]">
-                            <TripHistoryCard trip={t} />
-                        </div>
-                    ))}
-
-                </div>
-
-            </div>
-
-            <div className="grid grid-cols-[1.5fr_2.5fr] gap-4 flex-1 overflow-hidden mt-2">
-
-                {/* TRIP SCHEDULING */}
-                <div className="flex flex-col overflow-hidden">
-
-                    <h2 className="font-medium mb-2">
-                        Trip Scheduling
-                    </h2>
-
-                    <div className="grid grid-cols-2 gap-2 overflow-y-auto pr-1">
-
-                        {vehicles.length === 0 && (
-                            <p className="text-xs text-gray-400">
-                                No vehicles available
-                            </p>
-                        )}
-
-                        {vehicles.map(v => (
-                            <FleetVehicleCard
-                                key={v.id}
-                                vehicle={v}
-                                onDispatch={openDispatch}
-                            />
-                        ))}
-
-                    </div>
-
-                </div>
-
-                {/* ACTIVE TRIPS */}
-                <ActiveTripsTable
-                    trips={activeTrips}
-                    onCancel={cancelTrip}
-                    onReschedule={rescheduleTrip}
-                />
-
-            </div>
-
-            {/* MODALS */}
-
-            <DispatchTripModal
-                open={dispatchOpen}
-                vehicle={selectedVehicle}
-                routes={routes}
-                onClose={() => setDispatchOpen(false)}
-                onSuccess={() => load(false)}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <TripsStat
+              icon={<CalendarClock size={18} />}
+              label="Scheduled / Active"
+              value={activeTrips.length}
             />
+            <TripsStat icon={<Route size={18} />} label="Vehicles" value={vehicles.length} />
+            <TripsStat icon={<TimerReset size={18} />} label="Trip history" value={history.length} />
+          </div>
+        </div>
+      </section>
 
-            <RescheduleTripModal
-                open={rescheduleOpen}
-                trip={selectedTrip}
-                onClose={() => setRescheduleOpen(false)}
-                onSuccess={() => load(false)}
-            />
+      <section className="space-y-3 rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-slate-900">Recent Trip History</h2>
+            <p className="text-sm text-slate-500">Quick access to the latest completed or closed trips.</p>
+          </div>
 
-            <ConfirmTripModal
-                open={confirmOpen}
-                trip={selectedTrip}
-                action={confirmAction}
-                onClose={() => setConfirmOpen(false)}
-                onSuccess={() => load(false)}
-            />
-            {confirmScheduleOpen && pendingVehicle && (
-
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[9999]">
-
-                    <div className="bg-white p-6 rounded-lg w-[360px] space-y-4">
-
-                        <h3 className="font-semibold text-sm">
-                            Vehicle Already Scheduled
-                        </h3>
-
-                        <p className="text-xs text-gray-600">
-                            This vehicle already has a scheduled trip.
-                            Do you want to create another schedule?
-                        </p>
-
-                        <div className="flex justify-end gap-2">
-
-                            <button
-                                onClick={() => {
-                                    setConfirmScheduleOpen(false);
-                                    setPendingVehicle(null);
-                                }}
-                                className="border px-3 py-1 rounded text-sm"
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                onClick={() => {
-
-                                    setConfirmScheduleOpen(false);
-                                    setSelectedVehicle(pendingVehicle);
-                                    setDispatchOpen(true);
-                                    setPendingVehicle(null);
-
-                                }}
-                                className="bg-orange-600 text-white px-3 py-1 rounded text-sm"
-                            >
-                                Continue
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            )}
-
+          <button
+            className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-200"
+            onClick={() => navigate("/admin/trips/history")}
+            type="button"
+          >
+            View All
+          </button>
         </div>
 
-    );
+        <div className="flex snap-x gap-3 overflow-x-auto pb-2">
+          {history.length === 0 && <p className="text-sm text-slate-400">No trip history yet.</p>}
 
+          {history.slice(0, 10).map((trip) => (
+            <div key={trip.id} className="min-w-[280px] snap-start sm:min-w-[320px]">
+              <TripHistoryCard trip={trip} />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="grid min-h-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1.45fr)]">
+        <section className="rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-slate-900">Trip Scheduling</h2>
+              <p className="text-sm text-slate-500">Assign available vehicles to upcoming trips.</p>
+            </div>
+            <div className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+              {vehicles.length} vehicles
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {vehicles.length === 0 && <p className="text-sm text-slate-400">No vehicles available.</p>}
+
+            {vehicles.map((vehicle) => (
+              <FleetVehicleCard key={vehicle.id} onDispatch={openDispatch} vehicle={vehicle} />
+            ))}
+          </div>
+        </section>
+
+        <ActiveTripsTable trips={activeTrips} onCancel={cancelTrip} onReschedule={rescheduleTrip} />
+      </div>
+
+      <DispatchTripModal
+        onClose={() => setDispatchOpen(false)}
+        onSuccess={() => void load(false)}
+        open={dispatchOpen}
+        routes={routes}
+        vehicle={selectedVehicle}
+      />
+
+      <RescheduleTripModal
+        onClose={() => setRescheduleOpen(false)}
+        onSuccess={() => void load(false)}
+        open={rescheduleOpen}
+        trip={selectedTrip}
+      />
+
+      <ConfirmTripModal
+        action={confirmAction}
+        onClose={() => setConfirmOpen(false)}
+        onSuccess={() => void load(false)}
+        open={confirmOpen}
+        trip={selectedTrip}
+      />
+
+      {confirmScheduleOpen && pendingVehicle && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md space-y-4 rounded-[24px] bg-white p-6 shadow-xl">
+            <h3 className="text-base font-semibold text-slate-900">Vehicle Already Scheduled</h3>
+            <p className="text-sm leading-6 text-slate-600">
+              This vehicle already has a scheduled trip. Do you want to create another schedule?
+            </p>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                onClick={() => {
+                  setConfirmScheduleOpen(false);
+                  setPendingVehicle(null);
+                }}
+                type="button"
+              >
+                Cancel
+              </button>
+
+              <button
+                className="rounded-2xl bg-orange-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-orange-700"
+                onClick={() => {
+                  setConfirmScheduleOpen(false);
+                  setSelectedVehicle(pendingVehicle);
+                  setDispatchOpen(true);
+                  setPendingVehicle(null);
+                }}
+                type="button"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+type TripsStatProps = {
+  icon: ReactNode;
+  label: string;
+  value: number;
+};
+
+function TripsStat({ icon, label, value }: TripsStatProps) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm text-slate-500">{label}</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-900">{value}</p>
+        </div>
+        <div className="rounded-2xl bg-emerald-100 p-3 text-emerald-700">{icon}</div>
+      </div>
+    </div>
+  );
 }

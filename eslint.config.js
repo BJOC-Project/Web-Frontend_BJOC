@@ -19,5 +19,16 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      "@typescript-eslint/no-explicit-any": "warn",
+      "react-hooks/immutability": "warn",
+      "react-hooks/set-state-in-effect": "warn",
+      "react-refresh/only-export-components": [
+        "warn",
+        {
+          allowConstantExport: true,
+        },
+      ],
+    },
   },
 ])

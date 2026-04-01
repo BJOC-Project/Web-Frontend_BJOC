@@ -1,15 +1,13 @@
-import axios from "axios";
+import api from "@/features/shared/services/api";
 
-const API = "http://localhost:5000/api";
+type LoginPayload = {
+  email: string;
+  password: string;
+};
 
 export const authService = {
-
-  async login(payload: { email: string; password: string }) {
-
-    const res = await axios.post(`${API}/auth/login`, payload);
-
+  async login(payload: LoginPayload) {
+    const res = await api.post("/auth/login", payload);
     return res.data;
-
   },
-
 };

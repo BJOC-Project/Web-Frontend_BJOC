@@ -1,4 +1,5 @@
 import api from "@/features/shared/services/api";
+import { extractApiData } from "@/features/shared/services/extractApiData";
 
 export const activityLogsService = {
 
@@ -6,7 +7,7 @@ export const activityLogsService = {
 
     const res = await api.get("/activity-logs");
 
-    return res.data;
+    return extractApiData(res.data);
 
   }
 
