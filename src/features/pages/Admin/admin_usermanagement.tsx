@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowUpDown,
   Ban,
@@ -9,7 +9,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { userService, getFullName, type User, type UserRole } from "./services/userService";
+import { userService, getFullName, type User, type UserListMeta, type UserRole } from "./services/userService";
 import {
   ConfirmDeleteModal,
   CreateUserModal,
@@ -44,6 +44,19 @@ function statusColor(status?: string | null) {
   return "bg-emerald-100 text-emerald-700";
 }
 
+const USER_PAGE_SIZE = 20;
+const EMPTY_USER_LIST_META: UserListMeta = {
+  activeCount: 0,
+  hasNextPage: false,
+  hasPreviousPage: false,
+  limit: USER_PAGE_SIZE,
+  page: 1,
+  sort: "desc",
+  suspendedCount: 0,
+  total: 0,
+  totalPages: 0,
+};
+
 export function AdminUserManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState("");
@@ -52,6 +65,8 @@ export function AdminUserManagement() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [sort, setSort] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(1);
+  const [userMeta, setUserMeta] = useState<UserListMeta>(EMPTY_USER_LIST_META);
   const [loading, setLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [openCreate, setOpenCreate] = useState(false);
@@ -59,20 +74,28 @@ export function AdminUserManagement() {
   const [openDelete, setOpenDelete] = useState(false);
   const [openDetails, setOpenDetails] = useState(false);
 
-  const stats = useMemo(() => {
-    return {
-      active: users.filter((user) => (user.status ?? "active") !== "suspended").length,
-      suspended: users.filter((user) => user.status === "suspended").length,
-      total: users.length,
-    };
-  }, [users]);
+  const stats = {
+    active: userMeta.activeCount,
+    suspended: userMeta.suspendedCount,
+    total: userMeta.total,
+  };
+  const currentPage = userMeta.total === 0 ? page : userMeta.page;
+  const totalPages = Math.max(1, userMeta.totalPages || 0);
+  const pageStart = userMeta.total === 0
+    ? 0
+    : ((currentPage - 1) * userMeta.limit) + 1;
+  const pageEnd = userMeta.total === 0
+    ? 0
+    : pageStart + users.length - 1;
 
   async function fetchUsers() {
     try {
       setLoading(true);
 
-      const data = await userService.getUsers({
+      const result = await userService.getUsers({
         from: from || undefined,
+        limit: USER_PAGE_SIZE,
+        page,
         role: role || undefined,
         search: search || undefined,
         sort,
@@ -80,10 +103,21 @@ export function AdminUserManagement() {
         to: to || undefined,
       });
 
-      setUsers(data);
+      if (result.meta.totalPages > 0 && page > result.meta.totalPages) {
+        setPage(result.meta.totalPages);
+        return;
+      }
+
+      setUsers(result.items);
+      setUserMeta(result.meta);
     } catch (error) {
       console.error("Fetch users error:", error);
       setUsers([]);
+      setUserMeta({
+        ...EMPTY_USER_LIST_META,
+        page,
+        sort,
+      });
     } finally {
       setLoading(false);
     }
@@ -95,7 +129,7 @@ export function AdminUserManagement() {
     }, 300);
 
     return () => window.clearTimeout(debounce);
-  }, [search, role, status, from, to, sort]);
+  }, [search, role, status, from, to, sort, page]);
 
   return (
     <div className="space-y-5">
@@ -134,7 +168,10 @@ export function AdminUserManagement() {
             <Search size={16} className="text-slate-400" />
             <input
               className="w-full bg-transparent text-sm outline-none"
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setPage(1);
+                setSearch(event.target.value);
+              }}
               placeholder="Search users..."
               value={search}
             />
@@ -142,7 +179,10 @@ export function AdminUserManagement() {
 
           <select
             className="rounded-2xl border border-slate-200 px-3 py-3 text-sm text-slate-700"
-            onChange={(event) => setRole(event.target.value as UserRole | "")}
+            onChange={(event) => {
+              setPage(1);
+              setRole(event.target.value as UserRole | "");
+            }}
             value={role}
           >
             <option value="">All Roles</option>
@@ -154,7 +194,10 @@ export function AdminUserManagement() {
 
           <select
             className="rounded-2xl border border-slate-200 px-3 py-3 text-sm text-slate-700"
-            onChange={(event) => setStatus(event.target.value)}
+            onChange={(event) => {
+              setPage(1);
+              setStatus(event.target.value);
+            }}
             value={status}
           >
             <option value="">All Status</option>
@@ -164,21 +207,30 @@ export function AdminUserManagement() {
 
           <input
             className="rounded-2xl border border-slate-200 px-3 py-3 text-sm text-slate-700"
-            onChange={(event) => setFrom(event.target.value)}
+            onChange={(event) => {
+              setPage(1);
+              setFrom(event.target.value);
+            }}
             type="date"
             value={from}
           />
 
           <input
             className="rounded-2xl border border-slate-200 px-3 py-3 text-sm text-slate-700"
-            onChange={(event) => setTo(event.target.value)}
+            onChange={(event) => {
+              setPage(1);
+              setTo(event.target.value);
+            }}
             type="date"
             value={to}
           />
 
           <button
             className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 px-3 py-3 text-sm font-medium text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-900"
-            onClick={() => setSort(sort === "asc" ? "desc" : "asc")}
+            onClick={() => {
+              setPage(1);
+              setSort(sort === "asc" ? "desc" : "asc");
+            }}
             type="button"
           >
             <ArrowUpDown size={14} />
@@ -364,6 +416,36 @@ export function AdminUserManagement() {
                 ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="flex flex-col gap-3 border-t border-slate-100 px-4 py-4 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <p>
+            Showing {pageStart}-{pageEnd} of {stats.total} users
+          </p>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <button
+              className="rounded-xl border border-slate-200 px-3 py-2 font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={loading || !userMeta.hasPreviousPage}
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              type="button"
+            >
+              Previous
+            </button>
+
+            <span className="min-w-[112px] text-center text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
+              Page {currentPage} of {totalPages}
+            </span>
+
+            <button
+              className="rounded-xl border border-slate-200 px-3 py-2 font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={loading || !userMeta.hasNextPage}
+              onClick={() => setPage((current) => current + 1)}
+              type="button"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </section>
 

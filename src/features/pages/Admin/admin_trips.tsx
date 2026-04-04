@@ -28,7 +28,7 @@ export function AdminTrips() {
   const [selectedTrip, setSelectedTrip] = useState<any>(null);
   const [confirmScheduleOpen, setConfirmScheduleOpen] = useState(false);
   const [pendingVehicle, setPendingVehicle] = useState<any>(null);
-  const [confirmAction, setConfirmAction] = useState<"cancel" | "reschedule" | null>(null);
+  const [confirmAction, setConfirmAction] = useState<"cancel" | "end" | "reschedule" | null>(null);
 
   const loadingRef = useRef(false);
 
@@ -119,6 +119,12 @@ export function AdminTrips() {
     setConfirmOpen(true);
   }
 
+  function endTrip(trip: any) {
+    setSelectedTrip(trip);
+    setConfirmAction("end");
+    setConfirmOpen(true);
+  }
+
   function rescheduleTrip(trip: any) {
     setSelectedTrip(trip);
     setRescheduleOpen(true);
@@ -162,7 +168,7 @@ export function AdminTrips() {
 
           <button
             className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 transition hover:bg-slate-200"
-            onClick={() => navigate("/admin/trips/history")}
+            onClick={() => navigate("/admin/reports-history")}
             type="button"
           >
             View All
@@ -201,7 +207,12 @@ export function AdminTrips() {
           </div>
         </section>
 
-        <ActiveTripsTable trips={activeTrips} onCancel={cancelTrip} onReschedule={rescheduleTrip} />
+        <ActiveTripsTable
+          onCancel={cancelTrip}
+          onEnd={endTrip}
+          onReschedule={rescheduleTrip}
+          trips={activeTrips}
+        />
       </div>
 
       <DispatchTripModal

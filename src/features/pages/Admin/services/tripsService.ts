@@ -40,9 +40,14 @@ export const tripsService = {
 
   },
 
-  async endTrip(id: string) {
+  async endTrip(
+    id: string,
+    payload: {
+      passenger_count: number;
+    },
+  ) {
 
-    const res = await api.patch(`/trips/${id}/end`);
+    const res = await api.patch(`/trips/${id}/end`, payload);
 
     return extractApiData(res.data);
 

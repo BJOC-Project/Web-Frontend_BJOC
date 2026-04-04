@@ -1,19 +1,30 @@
 import { phTime } from "@/lib/time";
 import { useLoading } from "@/features/shared/context/LoadingContext";
 
-type Props = {
-  onCancel: (trip: any) => void;
-  onReschedule: (trip: any) => void;
-  trips: any[];
+type ActiveTripRow = {
+  driver?: string | null;
+  id: string;
+  route?: string | null;
+  scheduled_departure_time?: string | null;
+  start_time?: string | null;
+  status: string;
+  vehicle?: string | null;
 };
 
-function renderTripTime(trip: any) {
+type Props = {
+  onCancel: (trip: ActiveTripRow) => void;
+  onEnd: (trip: ActiveTripRow) => void;
+  onReschedule: (trip: ActiveTripRow) => void;
+  trips: ActiveTripRow[];
+};
+
+function renderTripTime(trip: ActiveTripRow) {
   return trip.status === "scheduled"
-    ? phTime(trip.scheduled_departure_time)
-    : phTime(trip.start_time);
+    ? phTime(trip.scheduled_departure_time ?? null)
+    : phTime(trip.start_time ?? null);
 }
 
-export function ActiveTripsTable({ trips, onCancel, onReschedule }: Props) {
+export function ActiveTripsTable({ trips, onCancel, onEnd, onReschedule }: Props) {
   const { loading } = useLoading();
 
   return (
@@ -78,6 +89,16 @@ export function ActiveTripsTable({ trips, onCancel, onReschedule }: Props) {
                     </button>
                   </div>
                 )}
+
+                {trip.status === "ongoing" && (
+                  <button
+                    className="w-full rounded-2xl bg-rose-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-rose-700"
+                    onClick={() => onEnd(trip)}
+                    type="button"
+                  >
+                    End Trip
+                  </button>
+                )}
               </article>
             ))}
           </div>
@@ -137,6 +158,16 @@ export function ActiveTripsTable({ trips, onCancel, onReschedule }: Props) {
                           Cancel
                         </button>
                       </div>
+                    )}
+
+                    {trip.status === "ongoing" && (
+                      <button
+                        className="rounded-xl bg-rose-600 px-3 py-2 text-xs font-medium text-white transition hover:bg-rose-700"
+                        onClick={() => onEnd(trip)}
+                        type="button"
+                      >
+                        End Trip
+                      </button>
                     )}
                   </td>
                 </tr>

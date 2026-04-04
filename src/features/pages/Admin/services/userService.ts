@@ -22,8 +22,20 @@ export type User = {
 
 interface BackendEnvelope<T> {
   data: T;
-  meta?: Record<string, unknown>;
+  meta?: UserListMeta;
   success: boolean;
+}
+
+export interface UserListMeta {
+  activeCount: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  limit: number;
+  page: number;
+  sort: "asc" | "desc";
+  suspendedCount: number;
+  total: number;
+  totalPages: number;
 }
 
 interface BackendUser {
@@ -45,6 +57,8 @@ export const getFullName = (user: User) => {
 };
 
 type GetUsersParams = {
+  limit?: number;
+  page?: number;
   search?: string;
   role?: string;
   status?: string;
@@ -132,54 +146,28 @@ function mapBackendUser(user: BackendUser): User {
   };
 }
 
-function applyClientSideFilters(
-  users: User[],
-  params?: GetUsersParams,
-) {
-  let nextUsers = [...users];
-
-  if (params?.from) {
-    const fromDate = new Date(params.from);
-
-    nextUsers = nextUsers.filter((user) => {
-      if (!user.created_at) {
-        return false;
-      }
-
-      return new Date(user.created_at) >= fromDate;
-    });
-  }
-
-  if (params?.to) {
-    const toDate = new Date(params.to);
-    toDate.setHours(23, 59, 59, 999);
-
-    nextUsers = nextUsers.filter((user) => {
-      if (!user.created_at) {
-        return false;
-      }
-
-      return new Date(user.created_at) <= toDate;
-    });
-  }
-
-  if (params?.sort) {
-    const direction = params.sort === "asc" ? 1 : -1;
-
-    nextUsers.sort((left, right) => {
-      const leftTime = left.created_at ? new Date(left.created_at).getTime() : 0;
-      const rightTime = right.created_at ? new Date(right.created_at).getTime() : 0;
-
-      return (leftTime - rightTime) * direction;
-    });
-  }
-
-  return nextUsers;
-}
-
 /* ---------------------------
    SERVICE
 ---------------------------- */
+
+function normalizeUserListMeta(meta?: UserListMeta): UserListMeta {
+  return {
+    activeCount: meta?.activeCount ?? 0,
+    hasNextPage: meta?.hasNextPage ?? false,
+    hasPreviousPage: meta?.hasPreviousPage ?? false,
+    limit: meta?.limit ?? 20,
+    page: meta?.page ?? 1,
+    sort: meta?.sort ?? "desc",
+    suspendedCount: meta?.suspendedCount ?? 0,
+    total: meta?.total ?? 0,
+    totalPages: meta?.totalPages ?? 0,
+  };
+}
+
+export type UserListResult = {
+  items: User[];
+  meta: UserListMeta;
+};
 
 export const userService = {
 
@@ -192,12 +180,17 @@ export const userService = {
   },
 
   /* GET USERS */
-  getUsers: async (params?: GetUsersParams): Promise<User[]> => {
+  getUsers: async (params?: GetUsersParams): Promise<UserListResult> => {
 
     const cleanParams = cleanObject({
+      from: params?.from,
+      limit: params?.limit,
+      page: params?.page,
       role: mapRoleFilter(params?.role),
       search: params?.search,
+      sort: params?.sort,
       status: params?.status,
+      to: params?.to,
     });
     const res = await api.get<BackendEnvelope<BackendUser[]>>("/admin/users", {
       params: cleanParams,
@@ -205,7 +198,10 @@ export const userService = {
     const rawUsers = res.data?.data ?? [];
     const mappedUsers = rawUsers.map((user) => mapBackendUser(user));
 
-    return applyClientSideFilters(mappedUsers, params);
+    return {
+      items: mappedUsers,
+      meta: normalizeUserListMeta(res.data.meta),
+    };
   },
 
   /* GET USER BY ID */
