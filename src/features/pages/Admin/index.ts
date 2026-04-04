@@ -6,4 +6,5 @@ export * from './admin_trips';
 export * from './admin_reports&history';
 export * from './admin_usermanagement';
 export * from './admin_ActivityLogsPage';
+export * from './admin_settings';
 export * from './modal';

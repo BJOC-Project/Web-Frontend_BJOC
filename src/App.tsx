@@ -17,6 +17,7 @@ const AdminDriverVehicleOversight = lazy(() => import("@/features/pages/Admin").
 const AdminRouteStopManagement = lazy(() => import("@/features/pages/Admin").then((module) => ({ default: module.AdminRouteStopManagement })));
 const AdminTrips = lazy(() => import("@/features/pages/Admin").then((module) => ({ default: module.AdminTrips })));
 const AdminReportsHistory = lazy(() => import("@/features/pages/Admin").then((module) => ({ default: module.AdminReportsHistory })));
+const AdminSystemSettings = lazy(() => import("@/features/pages/Admin").then((module) => ({ default: module.AdminSystemSettings })));
 const AlertHistoryPage = lazy(() => import("@/features/pages/Notification").then((module) => ({ default: module.AlertHistoryPage })));
 const NotificationHistoryPage = lazy(() => import("@/features/pages/Notification").then((module) => ({ default: module.NotificationHistoryPage })));
 
@@ -88,7 +89,7 @@ const router = createBrowserRouter([
           { path: "reports-history", element: withSuspense(<AdminReportsHistory />) },
           { path: "users", element: withSuspense(<AdminUserManagement />) },
           { path: "logs", element: withSuspense(<AdminActivityLogsPage />) },
-          { path: "settings", element: <div>System Settings</div> },
+          { path: "settings", element: withSuspense(<AdminSystemSettings />) },
           { path: "notifications", element: withSuspense(<NotificationHistoryPage />) },
           { path: "alert", element: withSuspense(<AlertHistoryPage />) },
         ],

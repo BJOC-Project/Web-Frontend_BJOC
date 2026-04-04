@@ -13,6 +13,7 @@ import {
   Users,
   X,
   Navigation,
+  SlidersHorizontal,
 } from "lucide-react";
 import type { Role } from "@/features/types/auth";
 import { useAuthSession } from "@/features/pages/auth";
@@ -39,6 +40,7 @@ function buildNavItems(role: Role): NavItem[] {
       { label: "Reports & History", path: "/admin/reports-history", icon: <BarChart3 size={18} /> },
       { label: "User Management", path: "/admin/users", icon: <Users size={18} /> },
       { label: "System Logs", path: "/admin/logs", icon: <FileText size={18} /> },
+      { label: "System Settings", path: "/admin/settings", icon: <SlidersHorizontal size={18} /> },
     ];
   }
 

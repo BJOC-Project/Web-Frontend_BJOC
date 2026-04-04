@@ -1,5 +1,9 @@
 import api from "@/features/shared/services/api";
 import { extractApiData } from "@/features/shared/services/extractApiData";
+import type {
+  SystemMaintenanceSettings,
+  SystemMaintenanceSettingsInput,
+} from "@/features/types/operations";
 
 export const adminService = {
 
@@ -93,6 +97,22 @@ export const adminService = {
     const res = await api.get("/admin/live-map");
 
     return extractApiData(res.data);
+
+  },
+
+  async getMaintenanceSettings() {
+
+    const res = await api.get("/admin/settings/maintenance");
+
+    return extractApiData<SystemMaintenanceSettings>(res.data);
+
+  },
+
+  async updateMaintenanceSettings(payload: SystemMaintenanceSettingsInput) {
+
+    const res = await api.patch("/admin/settings/maintenance", payload);
+
+    return extractApiData<SystemMaintenanceSettings>(res.data);
 
   },
 

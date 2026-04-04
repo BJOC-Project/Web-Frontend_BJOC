@@ -18,6 +18,7 @@ function getPageLabel(pathname: string) {
   if (pathname.startsWith("/admin/reports-history")) return "Reports & History";
   if (pathname.startsWith("/admin/users")) return "User Management";
   if (pathname.startsWith("/admin/logs")) return "System Logs";
+  if (pathname.startsWith("/admin/settings")) return "System Settings";
   if (pathname.startsWith("/staff")) return "Staff Workspace";
   return "BJOC Control Center";
 }
