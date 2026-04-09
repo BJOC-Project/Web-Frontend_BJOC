@@ -192,8 +192,12 @@ export function OperatorTrips() {
       return `${driverName} is already assigned to ${selectedVehicleRecord.plate_number}.`;
     }
 
+    if (selectedVehicleRecord.driver_id && selectedVehicleRecord.driver_id !== selectedDriverRecord.id) {
+      return `${selectedVehicleRecord.plate_number} is already assigned to another driver. Unassign it first before scheduling.`;
+    }
+
     if (selectedDriverRecord.vehicle_id && selectedDriverRecord.vehicle_id !== selectedVehicleRecord.id) {
-      return `${driverName} will be reassigned to ${selectedVehicleRecord.plate_number} before scheduling this trip.`;
+      return `${driverName} is already assigned to another vehicle. Clear that assignment first before scheduling.`;
     }
 
     return `${driverName} will be assigned to ${selectedVehicleRecord.plate_number} for this schedule.`;
@@ -239,6 +243,16 @@ export function OperatorTrips() {
 
     if (selectedVehicleRecord.scheduled) {
       alert("The selected vehicle already has a scheduled trip.");
+      return;
+    }
+
+    if (selectedVehicleRecord.driver_id && selectedVehicleRecord.driver_id !== selectedDriverRecord.id) {
+      alert("This vehicle is already assigned to another driver. Unassign it first before scheduling.");
+      return;
+    }
+
+    if (selectedDriverRecord.vehicle_id && selectedDriverRecord.vehicle_id !== selectedVehicleRecord.id) {
+      alert("This driver is already assigned to another vehicle. Clear that assignment first before scheduling.");
       return;
     }
 

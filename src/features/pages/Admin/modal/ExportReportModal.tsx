@@ -8,6 +8,7 @@ type Props = {
   onClose: () => void;
   open: boolean;
   passengers: any[];
+  reportWindowLabel: string;
   trips: any[];
 };
 
@@ -17,6 +18,7 @@ export default function ExportReportModal({
   trips,
   passengers,
   drivers,
+  reportWindowLabel,
 }: Props) {
   const [type, setType] = useState("trips");
 
@@ -82,7 +84,8 @@ export default function ExportReportModal({
           </label>
 
           <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
-            {previewData.length} row{previewData.length !== 1 ? "s" : ""} available
+            <div>{previewData.length} row{previewData.length !== 1 ? "s" : ""} available</div>
+            <div className="mt-1">Current window: {reportWindowLabel}</div>
           </div>
         </div>
 
