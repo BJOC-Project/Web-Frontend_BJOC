@@ -3,13 +3,35 @@ import { Download, X } from "lucide-react";
 
 import { exportCSV } from "@/features/shared/utils/reportExport";
 
+type TripRow = {
+  actual_end: string;
+  actual_start: string;
+  driver_name: string;
+  id: string;
+  plate_number: string;
+  route_name: string;
+  scheduled_start: string;
+};
+
+type PassengerRow = {
+  passengers: number;
+  route: string;
+};
+
+type DriverRow = {
+  delayed: number;
+  driver: string;
+  onTime: number;
+  trips: number;
+};
+
 type Props = {
-  drivers: any[];
+  drivers: DriverRow[];
   onClose: () => void;
   open: boolean;
-  passengers: any[];
+  passengers: PassengerRow[];
   reportWindowLabel: string;
-  trips: any[];
+  trips: TripRow[];
 };
 
 export default function ExportReportModal({

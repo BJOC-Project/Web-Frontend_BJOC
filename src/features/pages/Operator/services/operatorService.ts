@@ -1,5 +1,6 @@
 import api from "@/features/shared/services/api";
 import { extractApiData } from "@/features/shared/services/extractApiData";
+import type { RouteStopPoint } from "@/features/shared/utils/tripSchedulePreview";
 
 export const operatorService = {
 
@@ -76,7 +77,7 @@ export const operatorService = {
 
     const res = await api.get(`/stops/route/${routeId}`);
 
-    return extractApiData<any[]>(res.data) ?? [];
+    return extractApiData<RouteStopPoint[]>(res.data) ?? [];
 
   },
 

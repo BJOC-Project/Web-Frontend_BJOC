@@ -132,15 +132,13 @@ export function AdminReportsHistory() {
     const resolvedSearch = filters?.search ?? search;
 
     try {
-      const tripData = await reportsService.getTrips({
-        endDate: resolvedEndDate,
-        search: resolvedSearch,
-        startDate: resolvedStartDate,
-      });
-      const passengerVolume = await reportsService.getPassengerVolume(resolvedStartDate, resolvedEndDate);
-      const peak = await reportsService.getPeakHours(resolvedStartDate, resolvedEndDate);
-      const dailyTrend = await reportsService.getPassengerTrend(resolvedStartDate, resolvedEndDate);
-      const driverData = await reportsService.getDriverReport(resolvedStartDate, resolvedEndDate, resolvedSearch);
+      const [tripData, passengerVolume, peak, dailyTrend, driverData] = await Promise.all([
+        reportsService.getTrips({ endDate: resolvedEndDate, search: resolvedSearch, startDate: resolvedStartDate }),
+        reportsService.getPassengerVolume(resolvedStartDate, resolvedEndDate),
+        reportsService.getPeakHours(resolvedStartDate, resolvedEndDate),
+        reportsService.getPassengerTrend(resolvedStartDate, resolvedEndDate),
+        reportsService.getDriverReport(resolvedStartDate, resolvedEndDate, resolvedSearch),
+      ]);
 
       setTrips(tripData || []);
       setPassengers(passengerVolume || []);

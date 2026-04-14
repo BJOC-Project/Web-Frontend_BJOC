@@ -153,6 +153,7 @@ export function AdminRouteStopManagement() {
       return;
     }
 
+    const previousStops = stops;
     setStops(newStops);
 
     const updates = newStops.map((stop, index) => ({
@@ -160,7 +161,12 @@ export function AdminRouteStopManagement() {
       stop_order: index + 1,
     }));
 
-    await stopsService.updateStopOrder(selectedRoute.id, updates);
+    try {
+      await stopsService.updateStopOrder(selectedRoute.id, updates);
+    } catch {
+      setStops(previousStops);
+      alert("Failed to save stop order. Please try again.");
+    }
   }
 
   async function publishRoute() {

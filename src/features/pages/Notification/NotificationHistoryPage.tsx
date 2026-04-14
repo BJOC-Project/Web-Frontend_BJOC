@@ -30,11 +30,46 @@ export function NotificationHistoryPage() {
     void load();
   }, [currentPage, user]);
 
+  async function handleMarkRead(id: string) {
+    try {
+      await notificationService.markRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function handleMarkAllRead() {
+    if (!user) {
+      return;
+    }
+
+    try {
+      await notificationService.markAllRead(user.role);
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   const grouped = groupNotifications(notifications);
+  const hasUnread = notifications.some((n) => !n.is_read);
 
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="mb-4 text-xl font-semibold">Notification History</h1>
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <h1 className="text-xl font-semibold">Notification History</h1>
+        {hasUnread && (
+          <button
+            onClick={() => void handleMarkAllRead()}
+            className="rounded-md border px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+          >
+            Mark all as read
+          </button>
+        )}
+      </div>
 
       {Object.entries(grouped).length === 0 ? (
         <div className="rounded-lg border bg-white p-4 text-sm text-gray-500">
@@ -47,12 +82,25 @@ export function NotificationHistoryPage() {
 
             <div className="rounded-lg border bg-white">
               {items.map((notification) => (
-                <div key={notification.id} className="border-b p-4 last:border-none">
+                <div
+                  key={notification.id}
+                  className={`border-b p-4 last:border-none ${!notification.is_read ? "border-l-4 border-l-blue-400" : ""}`}
+                >
                   <div className="flex items-center justify-between gap-3">
                     <p className="font-medium">{notification.title}</p>
-                    <span className="text-xs text-gray-400">
-                      {new Date(notification.created_at).toLocaleString()}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      {!notification.is_read && (
+                        <button
+                          onClick={() => void handleMarkRead(notification.id)}
+                          className="text-xs text-blue-600 hover:underline"
+                        >
+                          Mark as read
+                        </button>
+                      )}
+                      <span className="text-xs text-gray-400">
+                        {new Date(notification.created_at).toLocaleString()}
+                      </span>
+                    </div>
                   </div>
 
                   <p className="text-sm text-gray-500">{notification.message}</p>

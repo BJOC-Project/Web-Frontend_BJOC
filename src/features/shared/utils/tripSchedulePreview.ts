@@ -1,4 +1,4 @@
-type RouteStopPoint = {
+export type RouteStopPoint = {
   latitude?: number | string | null;
   longitude?: number | string | null;
   stop_order?: number | null;

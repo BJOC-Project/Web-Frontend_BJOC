@@ -8,6 +8,7 @@ import {
   calculateRouteFare,
   formatRouteFare,
   resolveRouteEndpoints,
+  type RouteStopPoint,
 } from "@/features/shared/utils/tripSchedulePreview";
 import { stopsService } from "../services/stopsService";
 import { tripsService } from "../services/tripsService";
@@ -22,13 +23,28 @@ type ActiveTripRow = {
   vehicle_id?: string | null;
 };
 
+type VehicleShape = {
+  id: string;
+  plate_number?: string | null;
+  driver?: string | null;
+  ongoing: boolean;
+  scheduled: boolean;
+};
+
+type RouteShape = {
+  id: string;
+  route_name?: string | null;
+  start_location?: string | null;
+  end_location?: string | null;
+};
+
 type Props = {
   activeTrips: ActiveTripRow[];
   onClose: () => void;
   onSuccess: () => void;
   open: boolean;
-  routes: any[];
-  vehicle: any;
+  routes: RouteShape[];
+  vehicle: VehicleShape | null;
 };
 
 export function DispatchTripModal({
@@ -41,7 +57,7 @@ export function DispatchTripModal({
 }: Props) {
   const [selectedRoute, setSelectedRoute] = useState("");
   const [departureTime, setDepartureTime] = useState<Date | null>(phNow());
-  const [routeStops, setRouteStops] = useState<any[]>([]);
+  const [routeStops, setRouteStops] = useState<RouteStopPoint[]>([]);
   const [farePreview, setFarePreview] = useState<number | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
@@ -125,7 +141,7 @@ export function DispatchTripModal({
         return leftTime - rightTime;
       });
   }, [activeTrips, vehicle]);
-  const selectedRouteRecord = routes.find((route: any) => route.id === selectedRoute) ?? null;
+  const selectedRouteRecord = routes.find((route) => route.id === selectedRoute) ?? null;
   const routePreview = resolveRouteEndpoints(selectedRouteRecord, routeStops);
   const departurePreview = departureTime
     ? departureTime.toLocaleString("en-PH", {
@@ -140,13 +156,14 @@ export function DispatchTripModal({
       ? "Calculating..."
       : formatRouteFare(farePreview)
     : "Select route first";
-  const scheduleValidationNote = vehicle.scheduled
-    ? "This vehicle already has another scheduled trip. You can still add one if the departure window does not overlap."
-    : "Schedule conflicts are checked when you submit the trip.";
 
   if (!open || !vehicle) {
     return null;
   }
+
+  const scheduleValidationNote = vehicle.scheduled
+    ? "This vehicle already has another scheduled trip. You can still add one if the departure window does not overlap."
+    : "Schedule conflicts are checked when you submit the trip.";
 
   async function scheduleTrip() {
     if (vehicle.ongoing) {
@@ -197,7 +214,7 @@ export function DispatchTripModal({
     setDepartureTime(new Date(phNow().getTime() + minutes * 60000));
   }
 
-  function getRouteLabel(route: any) {
+  function getRouteLabel(route: RouteShape) {
     return route.route_name || `${route.start_location || "Unknown"} -> ${route.end_location || "Unknown"}`;
   }
 
@@ -226,7 +243,7 @@ export function DispatchTripModal({
               value={selectedRoute}
             >
               <option value="">Select Route</option>
-              {routes.map((route: any) => (
+              {routes.map((route) => (
                 <option key={route.id} value={route.id}>
                   {getRouteLabel(route)}
                 </option>

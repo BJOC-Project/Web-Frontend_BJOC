@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Crosshair, MapPinned, PencilLine, Route, Save, Trash2 } from "lucide-react";
+import { Crosshair, MapPin, PencilLine, Route, Save, Trash2 } from "lucide-react";
 
 import SharedMap from "@/features/shared/components/layout/SharedMap";
 import {
@@ -205,7 +205,7 @@ export function OperatorManageRoutes2() {
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <InfoPill icon={<Route size={16} />} label="Routes" value={routes.length} />
-            <InfoPill icon={<MapPinned size={16} />} label="Stops" value={stops.length} />
+            <InfoPill icon={<MapPin size={16} />} label="Stops" value={stops.length} />
             <InfoPill icon={<PencilLine size={16} />} label="Mode" value={editingId ? "Editing" : "Adding"} />
           </div>
         </div>
@@ -449,11 +449,11 @@ function InfoPill({ icon, label, value }: InfoPillProps) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
       <div className="flex items-center justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{label}</p>
-          <p className="mt-2 text-lg font-semibold text-slate-900">{value}</p>
+          <p className="mt-2 truncate text-lg font-semibold text-slate-900">{value}</p>
         </div>
-        <div className="rounded-2xl bg-blue-100 p-3 text-blue-700">{icon}</div>
+        <div className="shrink-0 rounded-2xl bg-blue-100 p-3 text-blue-700">{icon}</div>
       </div>
     </div>
   );

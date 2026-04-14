@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { BarChart3, Route, TrendingUp, Users } from "lucide-react";
+import { BarChart3, CalendarClock, TrendingUp, Users } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -93,7 +93,7 @@ export function OperatorReportsPage() {
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <ReportStat
             accentClass="bg-emerald-100 text-emerald-700"
-            icon={<Route size={18} />}
+            icon={<CalendarClock size={18} />}
             label="Trips Today"
             value={overall.trips_today}
           />
@@ -242,11 +242,11 @@ function ReportStat({ accentClass, icon, label, value }: ReportStatProps) {
   return (
     <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-sm text-slate-500">{label}</p>
-          <p className="mt-2 text-3xl font-semibold text-slate-900">{value}</p>
+          <p className="mt-2 truncate text-3xl font-semibold text-slate-900">{value}</p>
         </div>
-        <div className={`rounded-2xl p-3 ${accentClass}`}>{icon}</div>
+        <div className={`shrink-0 rounded-2xl p-3 ${accentClass}`}>{icon}</div>
       </div>
     </div>
   );
