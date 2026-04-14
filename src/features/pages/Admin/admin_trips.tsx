@@ -216,6 +216,7 @@ export function AdminTrips() {
       </div>
 
       <DispatchTripModal
+        activeTrips={activeTrips}
         onClose={() => setDispatchOpen(false)}
         onSuccess={() => void load(false)}
         open={dispatchOpen}
@@ -243,7 +244,8 @@ export function AdminTrips() {
           <div className="w-full max-w-md space-y-4 rounded-[24px] bg-white p-6 shadow-xl">
             <h3 className="text-base font-semibold text-slate-900">Vehicle Already Scheduled</h3>
             <p className="text-sm leading-6 text-slate-600">
-              This vehicle already has a scheduled trip. Do you want to create another schedule?
+              This vehicle already has a scheduled trip. You can still create another one, and the
+              exact time will be validated when you submit.
             </p>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <button

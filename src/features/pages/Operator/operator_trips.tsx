@@ -50,6 +50,36 @@ type StaffTrip = {
   vehicle_id?: string | null;
 };
 
+function getStaffTripPreviewTimestamp(trip: StaffTrip) {
+  const source = trip.status === "scheduled"
+    ? trip.scheduled_departure_time
+    : trip.start_time ?? trip.scheduled_departure_time;
+
+  if (!source) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  const parsed = new Date(source).getTime();
+  return Number.isFinite(parsed) ? parsed : Number.MAX_SAFE_INTEGER;
+}
+
+function formatStaffTripPreviewTime(trip: StaffTrip) {
+  const source = trip.status === "scheduled"
+    ? trip.scheduled_departure_time
+    : trip.start_time ?? trip.scheduled_departure_time;
+
+  if (!source) {
+    return "Time unavailable";
+  }
+
+  return new Date(source).toLocaleString("en-PH", {
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    month: "short",
+  });
+}
+
 export default OperatorTrips;
 
 export function OperatorTrips() {
@@ -166,7 +196,7 @@ export function OperatorTrips() {
   const selectedVehicleRecord = vehicles.find((vehicle) => vehicle.id === selectedVehicle) ?? null;
   const selectedDriverRecord = drivers.find((driver) => driver.id === selectedDriver) ?? null;
   const routePreview = resolveRouteEndpoints(selectedRouteRecord, routeStops);
-  const readyVehicles = vehicles.filter((vehicle) => !vehicle.ongoing && !vehicle.scheduled).length;
+  const readyVehicles = vehicles.filter((vehicle) => !vehicle.ongoing).length;
   const availableDrivers = drivers.filter((driver) => driver.status !== "offline").length;
   const departurePreview = departureTime
     ? departureTime.toLocaleString("en-PH", {
@@ -210,6 +240,24 @@ export function OperatorTrips() {
       ),
     [drivers],
   );
+  const schedulePreviewTrips = useMemo(() => {
+    const normalizedDriverName = selectedDriverRecord
+      ? `${selectedDriverRecord.first_name} ${selectedDriverRecord.last_name}`.trim().toLowerCase()
+      : "";
+
+    return activeTrips
+      .filter((trip) => {
+        const matchesVehicle = selectedVehicleRecord
+          ? trip.vehicle_id === selectedVehicleRecord.id
+          : false;
+        const matchesDriver =
+          normalizedDriverName.length > 0 &&
+          trip.driver.trim().toLowerCase() === normalizedDriverName;
+
+        return matchesVehicle || matchesDriver;
+      })
+      .sort((left, right) => getStaffTripPreviewTimestamp(left) - getStaffTripPreviewTimestamp(right));
+  }, [activeTrips, selectedDriverRecord, selectedVehicleRecord]);
 
   function addMinutes(minutes: number) {
     setDepartureTime(new Date(phNow().getTime() + minutes * 60000));
@@ -238,11 +286,6 @@ export function OperatorTrips() {
 
     if (selectedVehicleRecord.ongoing) {
       alert("The selected vehicle is currently on an active trip.");
-      return;
-    }
-
-    if (selectedVehicleRecord.scheduled) {
-      alert("The selected vehicle already has a scheduled trip.");
       return;
     }
 
@@ -416,6 +459,44 @@ export function OperatorTrips() {
           <div className="mt-4 rounded-[22px] border border-sky-100 bg-sky-50 px-4 py-3 text-sm text-sky-800">
             {assignmentMessage || "Choose a vehicle and driver to preview the assignment logic."}
           </div>
+
+          {selectedVehicleRecord?.scheduled && !selectedVehicleRecord.ongoing && (
+            <div className="mt-3 rounded-[22px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              This vehicle already has another scheduled trip. You can still add one if the
+              departure window does not overlap.
+            </div>
+          )}
+
+          {schedulePreviewTrips.length > 0 && (
+            <div className="mt-3 rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+              <p className="text-sm font-medium text-slate-700">Upcoming schedules for this vehicle or driver</p>
+              <div className="mt-3 space-y-2">
+                {schedulePreviewTrips.map((trip) => (
+                  <div
+                    key={trip.id}
+                    className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-slate-800">{trip.route || "Assigned route"}</p>
+                      <p className="mt-1 text-xs text-slate-500">{formatStaffTripPreviewTime(trip)}</p>
+                    </div>
+                    <span
+                      className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium ${
+                        trip.status === "ongoing"
+                          ? "bg-rose-100 text-rose-700"
+                          : "bg-amber-100 text-amber-700"
+                      }`}
+                    >
+                      {trip.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-xs text-slate-500">
+                The backend still performs the final overlap validation when you submit.
+              </p>
+            </div>
+          )}
 
           <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <button
