@@ -6,7 +6,7 @@ import Map, {
   type MapLayerMouseEvent,
   type MapRef,
 } from "react-map-gl";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Feature, LineString } from "geojson";
 import { LoaderPinwheelIcon, RotateCcw } from "lucide-react";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -14,8 +14,8 @@ import type { MapVehicle } from "@/features/types/operations";
 
 type Stop = {
   id?: string;
-  latitude: number;
-  longitude: number;
+  latitude: number | null;
+  longitude: number | null;
   name?: string;
 };
 
@@ -31,6 +31,16 @@ type SharedMapProps = {
   onRightClick?: (coords: { latitude: number; longitude: number }) => void;
 };
 
+function isFiniteCoordinate(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function hasValidCoordinatePair<T extends { latitude: unknown; longitude: unknown }>(
+  value: T,
+): value is T & { latitude: number; longitude: number } {
+  return isFiniteCoordinate(value.latitude) && isFiniteCoordinate(value.longitude);
+}
+
 export default function SharedMap({
   stops = [],
   vehicles = [],
@@ -44,6 +54,15 @@ export default function SharedMap({
   const [routeGeoJson, setRouteGeoJson] = useState<Feature<LineString> | null>(null);
 
   const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN;
+  const canRenderInteractiveMap = typeof mapboxToken === "string" && mapboxToken.trim().length > 0;
+  const validStops = useMemo(
+    () => stops.filter(hasValidCoordinatePair),
+    [stops],
+  );
+  const validVehicles = useMemo(
+    () => vehicles.filter(hasValidCoordinatePair),
+    [vehicles],
+  );
 
   const handleRightClick = (event: MapLayerMouseEvent) => {
     event.preventDefault();
@@ -72,14 +91,16 @@ export default function SharedMap({
   };
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchRoute = async () => {
-      if (stops.length < 2 || !mapboxToken) {
+      if (validStops.length < 2 || !canRenderInteractiveMap) {
         setRouteGeoJson(null);
         return;
       }
 
       try {
-        const coordinates = stops
+        const coordinates = validStops
           .map((stop) => `${stop.longitude},${stop.latitude}`)
           .join(";");
 
@@ -87,26 +108,53 @@ export default function SharedMap({
           `https://api.mapbox.com/directions/v5/mapbox/driving/${coordinates}` +
           `?geometries=geojson&overview=full&access_token=${mapboxToken}`;
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Mapbox directions request failed with status ${response.status}`);
+        }
+
         const data = await response.json();
 
         if (!data.routes || data.routes.length === 0) {
-          setRouteGeoJson(null);
+          if (!controller.signal.aborted) {
+            setRouteGeoJson(null);
+          }
           return;
         }
 
-        setRouteGeoJson({
-          type: "Feature",
-          properties: {},
-          geometry: data.routes[0].geometry,
-        });
+        if (!controller.signal.aborted) {
+          setRouteGeoJson({
+            type: "Feature",
+            properties: {},
+            geometry: data.routes[0].geometry,
+          });
+        }
       } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
         console.error("Route fetch error:", error);
+        if (!controller.signal.aborted) {
+          setRouteGeoJson(null);
+        }
       }
     };
 
     void fetchRoute();
-  }, [mapboxToken, stops]);
+    return () => controller.abort();
+  }, [canRenderInteractiveMap, mapboxToken, validStops]);
+
+  if (!canRenderInteractiveMap) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-slate-100 px-6 text-center text-sm text-slate-500">
+        Map preview is unavailable because `VITE_MAPBOX_TOKEN` is missing.
+      </div>
+    );
+  }
 
   return (
     <div className="relative h-full w-full">
@@ -144,7 +192,7 @@ export default function SharedMap({
           </Source>
         )}
 
-        {stops.map((stop, index) => (
+        {validStops.map((stop, index) => (
           <Marker
             key={stop.id || index}
             latitude={stop.latitude}
@@ -169,7 +217,7 @@ export default function SharedMap({
           </Marker>
         ))}
 
-        {vehicles.map((vehicle) => {
+        {validVehicles.map((vehicle) => {
           const driverLabel = vehicle.driver ?? vehicle.driver_name;
 
           return (

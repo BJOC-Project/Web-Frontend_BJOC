@@ -11,9 +11,8 @@ type RouteRecord = {
   start_location?: string | null;
 };
 
-const BASE_FARE = 13;
-const FARE_PER_KM = 1.8;
-const FREE_KM = 4;
+const BASE_FARE = 15;
+const FARE_STEP_AMOUNT = 5;
 
 function toNumber(value: number | string | null | undefined) {
   if (typeof value === "number") {
@@ -89,13 +88,8 @@ export function calculateRouteDistanceKm(stops: RouteStopPoint[]) {
 
 export function calculateRouteFare(stops: RouteStopPoint[]) {
   const distanceKm = calculateRouteDistanceKm(stops);
-
-  if (distanceKm <= FREE_KM) {
-    return BASE_FARE;
-  }
-
-  const overageKm = distanceKm - FREE_KM;
-  return Number((BASE_FARE + overageKm * FARE_PER_KM).toFixed(2));
+  const roundedDistanceKm = Math.max(1, Math.ceil(Math.max(0, distanceKm)));
+  return BASE_FARE + Math.max(0, roundedDistanceKm - 1) * FARE_STEP_AMOUNT;
 }
 
 export function formatRouteFare(fare: number | null | undefined) {

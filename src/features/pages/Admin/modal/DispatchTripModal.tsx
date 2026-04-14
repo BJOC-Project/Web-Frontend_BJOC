@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -12,7 +12,18 @@ import {
 import { stopsService } from "../services/stopsService";
 import { tripsService } from "../services/tripsService";
 
+type ActiveTripRow = {
+  driver?: string | null;
+  id: string;
+  route?: string | null;
+  scheduled_departure_time?: string | null;
+  start_time?: string | null;
+  status: string;
+  vehicle_id?: string | null;
+};
+
 type Props = {
+  activeTrips: ActiveTripRow[];
   onClose: () => void;
   onSuccess: () => void;
   open: boolean;
@@ -21,6 +32,7 @@ type Props = {
 };
 
 export function DispatchTripModal({
+  activeTrips,
   open,
   vehicle,
   routes,
@@ -88,6 +100,31 @@ export function DispatchTripModal({
     };
   }, [open, selectedRoute]);
 
+  const matchingTrips = useMemo(() => {
+    if (!vehicle) {
+      return [];
+    }
+
+    const normalizedDriver = typeof vehicle.driver === "string"
+      ? vehicle.driver.trim().toLowerCase()
+      : "";
+
+    return activeTrips
+      .filter((trip) => {
+        const matchesVehicle = trip.vehicle_id === vehicle.id;
+        const matchesDriver =
+          normalizedDriver.length > 0 &&
+          typeof trip.driver === "string" &&
+          trip.driver.trim().toLowerCase() === normalizedDriver;
+
+        return matchesVehicle || matchesDriver;
+      })
+      .sort((left, right) => {
+        const leftTime = getTripPreviewTimestamp(left);
+        const rightTime = getTripPreviewTimestamp(right);
+        return leftTime - rightTime;
+      });
+  }, [activeTrips, vehicle]);
   const selectedRouteRecord = routes.find((route: any) => route.id === selectedRoute) ?? null;
   const routePreview = resolveRouteEndpoints(selectedRouteRecord, routeStops);
   const departurePreview = departureTime
@@ -103,14 +140,17 @@ export function DispatchTripModal({
       ? "Calculating..."
       : formatRouteFare(farePreview)
     : "Select route first";
+  const scheduleValidationNote = vehicle.scheduled
+    ? "This vehicle already has another scheduled trip. You can still add one if the departure window does not overlap."
+    : "Schedule conflicts are checked when you submit the trip.";
 
   if (!open || !vehicle) {
     return null;
   }
 
   async function scheduleTrip() {
-    if (vehicle.scheduled || vehicle.ongoing) {
-      alert("This vehicle already has a scheduled or active trip.");
+    if (vehicle.ongoing) {
+      alert("This vehicle already has an active trip.");
       return;
     }
     if (!vehicle.driver) {
@@ -243,6 +283,39 @@ export function DispatchTripModal({
               ))}
             </div>
           </div>
+
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {scheduleValidationNote}
+          </div>
+
+          {matchingTrips.length > 0 && (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <p className="text-sm font-medium text-slate-700">Existing schedules for this vehicle or driver</p>
+              <div className="mt-3 space-y-2">
+                {matchingTrips.map((trip) => (
+                  <div
+                    key={trip.id}
+                    className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-slate-800">
+                        {trip.route || "Assigned route"}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {formatTripPreviewTime(trip)}
+                      </p>
+                    </div>
+                    <span className={getTripStatusClassName(trip.status)}>
+                      {trip.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-xs text-slate-500">
+                You can still schedule another trip if its time window does not overlap.
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -264,6 +337,44 @@ export function DispatchTripModal({
       </div>
     </div>
   );
+}
+
+function getTripPreviewTimestamp(trip: ActiveTripRow) {
+  const source = trip.status === "scheduled"
+    ? trip.scheduled_departure_time
+    : trip.start_time ?? trip.scheduled_departure_time;
+
+  if (!source) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  const parsed = new Date(source).getTime();
+  return Number.isFinite(parsed) ? parsed : Number.MAX_SAFE_INTEGER;
+}
+
+function formatTripPreviewTime(trip: ActiveTripRow) {
+  const source = trip.status === "scheduled"
+    ? trip.scheduled_departure_time
+    : trip.start_time ?? trip.scheduled_departure_time;
+
+  if (!source) {
+    return "Time unavailable";
+  }
+
+  return new Date(source).toLocaleString("en-PH", {
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    month: "short",
+  });
+}
+
+function getTripStatusClassName(status: string) {
+  return `inline-flex w-fit rounded-full px-3 py-1 text-xs font-medium ${
+    status === "ongoing"
+      ? "bg-rose-100 text-rose-700"
+      : "bg-amber-100 text-amber-700"
+  }`;
 }
 
 type PreviewFieldProps = {

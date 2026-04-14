@@ -46,12 +46,68 @@ type Driver = {
   trips: number;
 };
 
+type ReportRangePreset = "all" | "custom" | "month" | "week";
+
 function formatOptionalDate(value?: string | null) {
   if (!value) {
     return "-";
   }
 
   return new Date(value).toLocaleString();
+}
+
+function toDateInputValue(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function resolvePresetRange(range: Exclude<ReportRangePreset, "custom">) {
+  if (range === "all") {
+    return {
+      endDate: "",
+      startDate: "",
+    };
+  }
+
+  const endDate = new Date();
+  const startDate = new Date(endDate);
+  startDate.setDate(endDate.getDate() - (range === "week" ? 6 : 29));
+
+  return {
+    endDate: toDateInputValue(endDate),
+    startDate: toDateInputValue(startDate),
+  };
+}
+
+function buildReportWindowLabel(
+  range: ReportRangePreset,
+  startDate: string,
+  endDate: string,
+) {
+  if (range === "week") {
+    return "Last 7 days";
+  }
+
+  if (range === "month") {
+    return "Last 30 days";
+  }
+
+  if (range === "all") {
+    return "All dates";
+  }
+
+  if (startDate && endDate) {
+    return `${startDate} to ${endDate}`;
+  }
+
+  if (startDate) {
+    return `From ${startDate}`;
+  }
+
+  if (endDate) {
+    return `Until ${endDate}`;
+  }
+
+  return "Custom window";
 }
 
 export function AdminReportsHistory() {
@@ -63,19 +119,28 @@ export function AdminReportsHistory() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [search, setSearch] = useState("");
+  const [reportRange, setReportRange] = useState<ReportRangePreset>("all");
   const [exportOpen, setExportOpen] = useState(false);
 
-  async function loadReports() {
+  async function loadReports(filters?: {
+    endDate?: string;
+    search?: string;
+    startDate?: string;
+  }) {
+    const resolvedStartDate = filters?.startDate ?? startDate;
+    const resolvedEndDate = filters?.endDate ?? endDate;
+    const resolvedSearch = filters?.search ?? search;
+
     try {
       const tripData = await reportsService.getTrips({
-        endDate,
-        search,
-        startDate,
+        endDate: resolvedEndDate,
+        search: resolvedSearch,
+        startDate: resolvedStartDate,
       });
-      const passengerVolume = await reportsService.getPassengerVolume(startDate, endDate);
-      const peak = await reportsService.getPeakHours(startDate, endDate);
-      const dailyTrend = await reportsService.getPassengerTrend(startDate, endDate);
-      const driverData = await reportsService.getDriverReport(startDate, endDate, search);
+      const passengerVolume = await reportsService.getPassengerVolume(resolvedStartDate, resolvedEndDate);
+      const peak = await reportsService.getPeakHours(resolvedStartDate, resolvedEndDate);
+      const dailyTrend = await reportsService.getPassengerTrend(resolvedStartDate, resolvedEndDate);
+      const driverData = await reportsService.getDriverReport(resolvedStartDate, resolvedEndDate, resolvedSearch);
 
       setTrips(tripData || []);
       setPassengers(passengerVolume || []);
@@ -90,6 +155,16 @@ export function AdminReportsHistory() {
   useEffect(() => {
     void loadReports();
   }, []);
+
+  const reportWindowLabel = buildReportWindowLabel(reportRange, startDate, endDate);
+
+  function handleQuickRange(range: Exclude<ReportRangePreset, "custom">) {
+    const nextFilters = resolvePresetRange(range);
+    setReportRange(range);
+    setStartDate(nextFilters.startDate);
+    setEndDate(nextFilters.endDate);
+    void loadReports(nextFilters);
+  }
 
   return (
     <div className="space-y-5">
@@ -120,17 +195,47 @@ export function AdminReportsHistory() {
       </section>
 
       <section className="rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+        <div className="mb-4 flex flex-wrap gap-2">
+          {([
+            { label: "1 Week", value: "week" },
+            { label: "1 Month", value: "month" },
+            { label: "All", value: "all" },
+          ] as const).map((option) => (
+            <button
+              key={option.value}
+              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                reportRange === option.value
+                  ? "bg-emerald-950 text-white"
+                  : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+              }`}
+              onClick={() => handleQuickRange(option.value)}
+              type="button"
+            >
+              {option.label}
+            </button>
+          ))}
+          <div className="ml-auto rounded-full bg-slate-50 px-4 py-2 text-sm text-slate-500">
+            Window: {reportWindowLabel}
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[repeat(2,minmax(0,1fr))_minmax(0,1.4fr)_auto]">
           <input
             className="rounded-2xl border border-slate-200 px-3 py-3 text-sm text-slate-700"
-            onChange={(event) => setStartDate(event.target.value)}
+            onChange={(event) => {
+              setReportRange("custom");
+              setStartDate(event.target.value);
+            }}
             type="date"
             value={startDate}
           />
 
           <input
             className="rounded-2xl border border-slate-200 px-3 py-3 text-sm text-slate-700"
-            onChange={(event) => setEndDate(event.target.value)}
+            onChange={(event) => {
+              setReportRange("custom");
+              setEndDate(event.target.value);
+            }}
             type="date"
             value={endDate}
           />
@@ -319,6 +424,7 @@ export function AdminReportsHistory() {
         onClose={() => setExportOpen(false)}
         open={exportOpen}
         passengers={passengers}
+        reportWindowLabel={reportWindowLabel}
         trips={trips}
       />
     </div>
