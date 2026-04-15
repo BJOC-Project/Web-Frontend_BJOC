@@ -233,7 +233,7 @@ export function AdminRouteStopManagement() {
 
   function deleteRoute(id: string) {
     setConfirmTitle("Delete Route");
-    setConfirmMessage("Are you sure you want to delete this route? All stops will also be removed.");
+    setConfirmMessage("Are you sure you want to delete this route? All stops and completed trips will also be removed.");
     setConfirmButton("Delete");
     setConfirmColor("bg-red-600");
 
