@@ -68,25 +68,6 @@ export default function Navbar({ onMenuToggle, sidebarOpen }: NavbarProps) {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="relative" ref={messageRef}>
-            <button
-              className="rounded-2xl border border-slate-200 bg-white p-2 text-slate-700 shadow-sm transition hover:border-emerald-200 hover:text-emerald-800"
-              onClick={() => setOpenMessages((current) => !current)}
-              type="button"
-            >
-              <MessageSquare className="size-5" />
-            </button>
-
-            {openMessages && (
-              <div className="absolute right-0 z-50 mt-3 w-[min(20rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
-                <div className="border-b border-slate-100 px-4 py-3 font-semibold text-slate-900">
-                  Messages
-                </div>
-                <div className="px-4 py-5 text-sm text-slate-500">No messages yet</div>
-              </div>
-            )}
-          </div>
-
           <Alert disabled={isAlertPage} />
           <NotificationBell disabled={isNotificationPage} />
 
