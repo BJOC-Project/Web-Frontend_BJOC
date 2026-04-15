@@ -25,8 +25,15 @@ type DriverRow = {
   trips: number;
 };
 
+type LogRow = {
+  Action: string;
+  Date: string;
+  Description: string;
+};
+
 type Props = {
   drivers: DriverRow[];
+  logs: LogRow[];
   onClose: () => void;
   open: boolean;
   passengers: PassengerRow[];
@@ -40,6 +47,7 @@ export default function ExportReportModal({
   trips,
   passengers,
   drivers,
+  logs,
   reportWindowLabel,
 }: Props) {
   const [type, setType] = useState("trips");
@@ -51,9 +59,12 @@ export default function ExportReportModal({
     if (type === "drivers") {
       return drivers;
     }
+    if (type === "logs") {
+      return logs;
+    }
 
     return trips;
-  }, [drivers, passengers, trips, type]);
+  }, [drivers, logs, passengers, trips, type]);
 
   if (!open) {
     return null;
@@ -102,6 +113,7 @@ export default function ExportReportModal({
               <option value="trips">Trip History</option>
               <option value="passengers">Passenger Report</option>
               <option value="drivers">Driver Performance</option>
+              <option value="logs">System Logs</option>
             </select>
           </label>
 
