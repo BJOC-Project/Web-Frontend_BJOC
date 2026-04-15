@@ -9,6 +9,7 @@ import {
   calculateRouteFare,
   formatRouteFare,
   resolveRouteEndpoints,
+  type RouteStopPoint,
 } from "@/features/shared/utils/tripSchedulePreview";
 import { operatorService } from "./services/operatorService";
 
@@ -91,7 +92,7 @@ export function OperatorTrips() {
   const [selectedVehicle, setSelectedVehicle] = useState("");
   const [selectedDriver, setSelectedDriver] = useState("");
   const [departureTime, setDepartureTime] = useState<Date | null>(phNow());
-  const [routeStops, setRouteStops] = useState<any[]>([]);
+  const [routeStops, setRouteStops] = useState<RouteStopPoint[]>([]);
   const [farePreview, setFarePreview] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
@@ -699,11 +700,11 @@ function TopStat({ icon, label, value }: TopStatProps) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
       <div className="flex items-center justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-sm text-slate-500">{label}</p>
           <p className="mt-2 text-2xl font-semibold text-slate-900">{value}</p>
         </div>
-        <div className="rounded-2xl bg-sky-100 p-3 text-sky-700">{icon}</div>
+        <div className="shrink-0 rounded-2xl bg-sky-100 p-3 text-sky-700">{icon}</div>
       </div>
     </div>
   );

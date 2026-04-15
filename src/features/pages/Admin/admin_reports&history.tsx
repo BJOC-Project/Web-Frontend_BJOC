@@ -12,6 +12,7 @@ import {
 } from "recharts";
 
 import ExportReportModal from "./modal/ExportReportModal";
+import { activityLogsService } from "./services/activityLogsService";
 import { reportsService } from "./services/reportsService";
 
 type Trip = {
@@ -44,6 +45,13 @@ type Driver = {
   driver: string;
   onTime: number;
   trips: number;
+};
+
+type ActivityLog = {
+  action: string;
+  created_at: string;
+  description: string;
+  id: string;
 };
 
 type ReportRangePreset = "all" | "custom" | "month" | "week";
@@ -116,6 +124,7 @@ export function AdminReportsHistory() {
   const [peakHours, setPeakHours] = useState<PeakHour[]>([]);
   const [trend, setTrend] = useState<Trend[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [logs, setLogs] = useState<ActivityLog[]>([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [search, setSearch] = useState("");
@@ -132,21 +141,21 @@ export function AdminReportsHistory() {
     const resolvedSearch = filters?.search ?? search;
 
     try {
-      const tripData = await reportsService.getTrips({
-        endDate: resolvedEndDate,
-        search: resolvedSearch,
-        startDate: resolvedStartDate,
-      });
-      const passengerVolume = await reportsService.getPassengerVolume(resolvedStartDate, resolvedEndDate);
-      const peak = await reportsService.getPeakHours(resolvedStartDate, resolvedEndDate);
-      const dailyTrend = await reportsService.getPassengerTrend(resolvedStartDate, resolvedEndDate);
-      const driverData = await reportsService.getDriverReport(resolvedStartDate, resolvedEndDate, resolvedSearch);
+      const [tripData, passengerVolume, peak, dailyTrend, driverData, logData] = await Promise.all([
+        reportsService.getTrips({ endDate: resolvedEndDate, search: resolvedSearch, startDate: resolvedStartDate }),
+        reportsService.getPassengerVolume(resolvedStartDate, resolvedEndDate),
+        reportsService.getPeakHours(resolvedStartDate, resolvedEndDate),
+        reportsService.getPassengerTrend(resolvedStartDate, resolvedEndDate),
+        reportsService.getDriverReport(resolvedStartDate, resolvedEndDate, resolvedSearch),
+        activityLogsService.getLogs(),
+      ]);
 
       setTrips(tripData || []);
       setPassengers(passengerVolume || []);
       setPeakHours(peak || []);
       setTrend(dailyTrend || []);
       setDrivers(driverData || []);
+      setLogs(Array.isArray(logData) ? logData : []);
     } catch (error) {
       console.error("Failed to load reports", error);
     }
@@ -421,6 +430,11 @@ export function AdminReportsHistory() {
 
       <ExportReportModal
         drivers={drivers}
+        logs={logs.map((log) => ({
+          Action: log.action,
+          Date: new Date(log.created_at).toLocaleString(),
+          Description: log.description,
+        }))}
         onClose={() => setExportOpen(false)}
         open={exportOpen}
         passengers={passengers}

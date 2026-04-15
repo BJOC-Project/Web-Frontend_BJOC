@@ -201,6 +201,9 @@ export default function SharedMap({
           >
             <div
               onClick={() => flyToLocation(stop.latitude, stop.longitude)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") flyToLocation(stop.latitude, stop.longitude); }}
+              role="button"
+              tabIndex={0}
               className="flex cursor-pointer flex-col items-center"
             >
               {zoom >= 15 && stop.name && (
@@ -229,6 +232,9 @@ export default function SharedMap({
             >
               <div
                 onClick={() => flyToLocation(vehicle.latitude, vehicle.longitude)}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") flyToLocation(vehicle.latitude, vehicle.longitude); }}
+                role="button"
+                tabIndex={0}
                 className="flex cursor-pointer flex-col items-center"
               >
                 {zoom >= 15 && (

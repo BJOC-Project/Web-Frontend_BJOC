@@ -7,7 +7,7 @@ export const activityLogsService = {
 
     const res = await api.get("/activity-logs");
 
-    return extractApiData(res.data);
+    return extractApiData(res.data).rows;
 
   }
 

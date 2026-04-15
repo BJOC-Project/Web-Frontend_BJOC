@@ -2,6 +2,33 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { CalendarClock, Route, TimerReset } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+interface EnrichedVehicle {
+  id: string;
+  plate_number?: string | null;
+  driver?: string | null;
+  available: boolean;
+  ongoing: boolean;
+  scheduled: boolean;
+  trips_today: number;
+}
+
+interface ActiveTrip {
+  id: string;
+  vehicle_id?: string | null;
+  status: string;
+  driver?: string | null;
+  route?: string | null;
+  scheduled_departure_time?: string | null;
+  start_time?: string | null;
+}
+
+interface RouteRecord {
+  id: string;
+  route_name?: string | null;
+  start_location?: string | null;
+  end_location?: string | null;
+}
+
 import { useLoading } from "@/features/shared/context/LoadingContext";
 import { routesService } from "./services/routesService";
 import { tripsService } from "./services/tripsService";
@@ -17,17 +44,17 @@ export function AdminTrips() {
   const navigate = useNavigate();
   const { showLoading, hideLoading } = useLoading();
 
-  const [vehicles, setVehicles] = useState<any[]>([]);
-  const [activeTrips, setActiveTrips] = useState<any[]>([]);
-  const [history, setHistory] = useState<any[]>([]);
-  const [routes, setRoutes] = useState<any[]>([]);
+  const [vehicles, setVehicles] = useState<EnrichedVehicle[]>([]);
+  const [activeTrips, setActiveTrips] = useState<ActiveTrip[]>([]);
+  const [history, setHistory] = useState<ActiveTrip[]>([]);
+  const [routes, setRoutes] = useState<RouteRecord[]>([]);
   const [dispatchOpen, setDispatchOpen] = useState(false);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
-  const [selectedTrip, setSelectedTrip] = useState<any>(null);
+  const [selectedVehicle, setSelectedVehicle] = useState<EnrichedVehicle | null>(null);
+  const [selectedTrip, setSelectedTrip] = useState<ActiveTrip | null>(null);
   const [confirmScheduleOpen, setConfirmScheduleOpen] = useState(false);
-  const [pendingVehicle, setPendingVehicle] = useState<any>(null);
+  const [pendingVehicle, setPendingVehicle] = useState<EnrichedVehicle | null>(null);
   const [confirmAction, setConfirmAction] = useState<"cancel" | "end" | "reschedule" | null>(null);
 
   const loadingRef = useRef(false);
@@ -55,16 +82,16 @@ export function AdminTrips() {
       setActiveTrips(activeTripsData ?? []);
       setHistory(historyData ?? []);
 
-      const enrichedVehicles = (vehiclesData ?? []).map((vehicle: any) => {
+      const enrichedVehicles = (vehiclesData ?? []).map((vehicle) => {
         const scheduledTrip = (activeTripsData ?? []).find(
-          (trip: any) => trip.vehicle_id === vehicle.id && trip.status === "scheduled",
+          (trip) => trip.vehicle_id === vehicle.id && trip.status === "scheduled",
         );
 
         const ongoingTrip = (activeTripsData ?? []).find(
-          (trip: any) => trip.vehicle_id === vehicle.id && trip.status === "ongoing",
+          (trip) => trip.vehicle_id === vehicle.id && trip.status === "ongoing",
         );
 
-        const tripsToday = (historyData ?? []).filter((trip: any) => trip.vehicle_id === vehicle.id).length;
+        const tripsToday = (historyData ?? []).filter((trip) => trip.vehicle_id === vehicle.id).length;
 
         return {
           ...vehicle,
@@ -97,7 +124,7 @@ export function AdminTrips() {
     return () => window.clearInterval(interval);
   }, []);
 
-  function openDispatch(vehicle: any) {
+  function openDispatch(vehicle: EnrichedVehicle) {
     if (vehicle.ongoing) {
       alert("Vehicle is currently on a trip.");
       return;
@@ -113,19 +140,19 @@ export function AdminTrips() {
     setDispatchOpen(true);
   }
 
-  function cancelTrip(trip: any) {
+  function cancelTrip(trip: ActiveTrip) {
     setSelectedTrip(trip);
     setConfirmAction("cancel");
     setConfirmOpen(true);
   }
 
-  function endTrip(trip: any) {
+  function endTrip(trip: ActiveTrip) {
     setSelectedTrip(trip);
     setConfirmAction("end");
     setConfirmOpen(true);
   }
 
-  function rescheduleTrip(trip: any) {
+  function rescheduleTrip(trip: ActiveTrip) {
     setSelectedTrip(trip);
     setRescheduleOpen(true);
   }

@@ -45,10 +45,46 @@ export function AlertHistoryPage() {
     setCurrentPage(1);
   }, [activeTab]);
 
+  async function handleMarkRead(id: string) {
+    try {
+      await notificationService.markRead(id);
+      setAlerts((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, is_read: true } : a))
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function handleMarkAllRead() {
+    if (!user) {
+      return;
+    }
+
+    try {
+      await notificationService.markAllRead(user.role);
+      setAlerts((prev) => prev.map((a) => ({ ...a, is_read: true })));
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  const hasUnread = alerts.some((a) => !a.is_read);
+
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-4 flex items-center justify-between gap-4">
-        <h1 className="text-xl font-semibold">Alert History</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-semibold">Alert History</h1>
+          {hasUnread && (
+            <button
+              onClick={() => void handleMarkAllRead()}
+              className="rounded-md border px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-50"
+            >
+              Mark all as read
+            </button>
+          )}
+        </div>
 
         <div className="flex rounded-lg bg-slate-100 p-1">
           <button
@@ -73,13 +109,23 @@ export function AlertHistoryPage() {
           alerts.map((alert) => (
             <div
               key={alert.id}
-              className="border-b p-4 last:border-none"
+              className={`border-b p-4 last:border-none ${!alert.is_read ? "border-l-4 border-l-red-400" : ""}`}
             >
               <div className="flex items-center justify-between gap-3">
                 <p className="font-medium text-red-600">{alert.title}</p>
-                <span className="text-xs text-gray-400">
-                  {new Date(alert.created_at).toLocaleString()}
-                </span>
+                <div className="flex items-center gap-3">
+                  {!alert.is_read && (
+                    <button
+                      onClick={() => void handleMarkRead(alert.id)}
+                      className="text-xs text-red-600 hover:underline"
+                    >
+                      Mark as read
+                    </button>
+                  )}
+                  <span className="text-xs text-gray-400">
+                    {new Date(alert.created_at).toLocaleString()}
+                  </span>
+                </div>
               </div>
 
               <p className="mt-1 text-sm text-gray-500">{alert.message}</p>

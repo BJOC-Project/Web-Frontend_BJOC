@@ -3,13 +3,42 @@ import { Download, X } from "lucide-react";
 
 import { exportCSV } from "@/features/shared/utils/reportExport";
 
+type TripRow = {
+  actual_end: string;
+  actual_start: string;
+  driver_name: string;
+  id: string;
+  plate_number: string;
+  route_name: string;
+  scheduled_start: string;
+};
+
+type PassengerRow = {
+  passengers: number;
+  route: string;
+};
+
+type DriverRow = {
+  delayed: number;
+  driver: string;
+  onTime: number;
+  trips: number;
+};
+
+type LogRow = {
+  Action: string;
+  Date: string;
+  Description: string;
+};
+
 type Props = {
-  drivers: any[];
+  drivers: DriverRow[];
+  logs: LogRow[];
   onClose: () => void;
   open: boolean;
-  passengers: any[];
+  passengers: PassengerRow[];
   reportWindowLabel: string;
-  trips: any[];
+  trips: TripRow[];
 };
 
 export default function ExportReportModal({
@@ -18,6 +47,7 @@ export default function ExportReportModal({
   trips,
   passengers,
   drivers,
+  logs,
   reportWindowLabel,
 }: Props) {
   const [type, setType] = useState("trips");
@@ -29,9 +59,12 @@ export default function ExportReportModal({
     if (type === "drivers") {
       return drivers;
     }
+    if (type === "logs") {
+      return logs;
+    }
 
     return trips;
-  }, [drivers, passengers, trips, type]);
+  }, [drivers, logs, passengers, trips, type]);
 
   if (!open) {
     return null;
@@ -80,6 +113,7 @@ export default function ExportReportModal({
               <option value="trips">Trip History</option>
               <option value="passengers">Passenger Report</option>
               <option value="drivers">Driver Performance</option>
+              <option value="logs">System Logs</option>
             </select>
           </label>
 

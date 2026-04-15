@@ -41,6 +41,30 @@ export default function NotificationBell({ disabled = false }: { disabled?: bool
     void loadNotifications();
   }, [user]);
 
+  async function handleMarkRead(id: string) {
+    try {
+      await notificationService.markRead(id);
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function handleMarkAllRead() {
+    if (!user) {
+      return;
+    }
+
+    try {
+      await notificationService.markAllRead(user.role);
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (bellRef.current && !bellRef.current.contains(event.target as Node)) {
@@ -63,12 +87,17 @@ export default function NotificationBell({ disabled = false }: { disabled?: bool
   }
 
   return (
-    <div ref={bellRef} className={`relative ${disabled ? "opacity-40 pointer-events-none" : ""}`}>
-      <button onClick={toggleBell}>
+    <div ref={bellRef} className={disabled ? "opacity-40 pointer-events-none" : ""}>
+      <button
+        onClick={toggleBell}
+        className="relative rounded-2xl border border-slate-200 bg-white p-2 text-slate-700 shadow-sm transition hover:border-emerald-200 hover:text-emerald-800"
+      >
         <Bell className="size-5 text-gray-700" />
 
         {unread > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded">{unread}</span>
+          <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
+            {unread > 99 ? "99+" : unread}
+          </span>
         )}
       </button>
 
@@ -84,8 +113,17 @@ export default function NotificationBell({ disabled = false }: { disabled?: bool
                 <div className="px-3 py-1 text-xs font-semibold text-gray-400">{label}</div>
 
                 {items.map((notification) => (
-                  <div key={notification.id} className="p-3 border-b hover:bg-gray-50 cursor-pointer">
-                    <p className="text-sm font-medium">{notification.title}</p>
+                  <div
+                    key={notification.id}
+                    onClick={() => void handleMarkRead(notification.id)}
+                    className={`p-3 border-b hover:bg-gray-50 cursor-pointer ${!notification.is_read ? "bg-blue-50" : ""}`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      {!notification.is_read && (
+                        <span className="h-2 w-2 shrink-0 rounded-full bg-blue-500" />
+                      )}
+                      <p className="text-sm font-medium">{notification.title}</p>
+                    </div>
                     <p className="text-xs text-gray-500">{notification.message}</p>
                   </div>
                 ))}
@@ -93,7 +131,13 @@ export default function NotificationBell({ disabled = false }: { disabled?: bool
             ))}
           </div>
 
-          <div className="p-3 border-t text-center">
+          <div className="p-3 border-t flex items-center justify-between gap-2">
+            <button
+              onClick={() => void handleMarkAllRead()}
+              className="text-sm text-gray-500 hover:underline"
+            >
+              Mark all as read
+            </button>
             <button
               onClick={() => {
                 setOpen(false);

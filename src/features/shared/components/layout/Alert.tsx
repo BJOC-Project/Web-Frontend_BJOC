@@ -43,6 +43,30 @@ export default function Alert({ disabled = false }: { disabled?: boolean }) {
     void loadAlerts();
   }, [user]);
 
+  async function handleMarkRead(id: string) {
+    try {
+      await notificationService.markRead(id);
+      setAlerts((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, is_read: true } : a))
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function handleMarkAllRead() {
+    if (!user) {
+      return;
+    }
+
+    try {
+      await notificationService.markAllRead(user.role);
+      setAlerts((prev) => prev.map((a) => ({ ...a, is_read: true })));
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (alertRef.current && !alertRef.current.contains(event.target as Node)) {
@@ -65,12 +89,17 @@ export default function Alert({ disabled = false }: { disabled?: boolean }) {
   }
 
   return (
-    <div ref={alertRef} className={`relative ${disabled ? "opacity-40 pointer-events-none" : ""}`}>
-      <button onClick={toggleAlert}>
+    <div ref={alertRef} className={disabled ? "opacity-40 pointer-events-none" : ""}>
+      <button
+        onClick={toggleAlert}
+        className="relative rounded-2xl border border-slate-200 bg-white p-2 text-slate-700 shadow-sm transition hover:border-emerald-200 hover:text-emerald-800"
+      >
         <AlertTriangle className="size-5 text-red-500" />
 
         {alertCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs px-1 rounded">{alertCount}</span>
+          <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
+            {alertCount > 99 ? "99+" : alertCount}
+          </span>
         )}
       </button>
 
@@ -81,14 +110,29 @@ export default function Alert({ disabled = false }: { disabled?: boolean }) {
             {alerts.length === 0 && <div className="p-4 text-sm text-gray-500">No alerts</div>}
 
             {alerts.map((alert) => (
-              <div key={alert.id} className="p-3 border-b hover:bg-gray-50">
-                <p className="text-sm font-medium text-red-600">{alert.title}</p>
+              <div
+                key={alert.id}
+                onClick={() => void handleMarkRead(alert.id)}
+                className={`p-3 border-b hover:bg-gray-50 cursor-pointer ${!alert.is_read ? "bg-red-50" : ""}`}
+              >
+                <div className="flex items-center gap-1.5">
+                  {!alert.is_read && (
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" />
+                  )}
+                  <p className="text-sm font-medium text-red-600">{alert.title}</p>
+                </div>
                 <p className="text-xs text-gray-500">{alert.message}</p>
               </div>
             ))}
           </div>
 
-          <div className="p-3 border-t text-center">
+          <div className="p-3 border-t flex items-center justify-between gap-2">
+            <button
+              onClick={() => void handleMarkAllRead()}
+              className="text-sm text-gray-500 hover:underline"
+            >
+              Mark all as read
+            </button>
             <button
               onClick={() => {
                 setOpen(false);
