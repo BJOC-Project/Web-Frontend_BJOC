@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Menu, MessageSquare } from "lucide-react";
+import { useMemo } from "react";
+import { Menu } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useAuthSession } from "@/features/pages/auth";
 import NotificationBell from "./NotificationBell";
@@ -39,26 +39,10 @@ function getInitials(fullName?: string | null) {
 export default function Navbar({ onMenuToggle, sidebarOpen }: NavbarProps) {
   const { user } = useAuthSession();
   const location = useLocation();
-  const [openMessages, setOpenMessages] = useState(false);
-  const messageRef = useRef<HTMLDivElement>(null);
-
   const isNotificationPage = location.pathname.endsWith("/notifications");
   const isAlertPage = location.pathname.endsWith("/alert");
   const pageLabel = useMemo(() => getPageLabel(location.pathname), [location.pathname]);
   const initials = getInitials(user?.fullName);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (messageRef.current && !messageRef.current.contains(event.target as Node)) {
-        setOpenMessages(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   return (
     <nav className="sticky top-0 z-30 border-b border-emerald-950/10 bg-white/85 backdrop-blur-xl">
