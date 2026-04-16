@@ -6,8 +6,6 @@ import { CalendarClock, CarFront, Route, UserRound } from "lucide-react";
 
 import { phNow, phTime } from "@/lib/time";
 import {
-  calculateRouteFare,
-  formatRouteFare,
   resolveRouteEndpoints,
   type RouteStopPoint,
 } from "@/features/shared/utils/tripSchedulePreview";
@@ -93,7 +91,6 @@ export function OperatorTrips() {
   const [selectedDriver, setSelectedDriver] = useState("");
   const [departureTime, setDepartureTime] = useState<Date | null>(phNow());
   const [routeStops, setRouteStops] = useState<RouteStopPoint[]>([]);
-  const [farePreview, setFarePreview] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -142,7 +139,6 @@ export function OperatorTrips() {
   useEffect(() => {
     if (!selectedRoute) {
       setRouteStops([]);
-      setFarePreview(null);
       setIsPreviewLoading(false);
       return;
     }
@@ -159,7 +155,6 @@ export function OperatorTrips() {
         }
 
         setRouteStops(stops);
-        setFarePreview(calculateRouteFare(stops));
       })
       .catch((error) => {
         console.error("Staff route preview load error:", error);
@@ -169,7 +164,6 @@ export function OperatorTrips() {
         }
 
         setRouteStops([]);
-        setFarePreview(null);
       })
       .finally(() => {
         if (active) {
@@ -207,11 +201,6 @@ export function OperatorTrips() {
         month: "short",
       })
     : "Select departure time";
-  const fareLabel = selectedRoute
-    ? isPreviewLoading
-      ? "Calculating..."
-      : formatRouteFare(farePreview)
-    : "Select route first";
   const assignmentMessage = useMemo(() => {
     if (!selectedVehicleRecord || !selectedDriverRecord) {
       return "";
@@ -547,7 +536,6 @@ export function OperatorTrips() {
                 value={selectedRoute ? routePreview.dropOff : "Auto based on route"}
               />
               <PreviewField label="Time" value={departurePreview} />
-              <PreviewField label="Fare" value={fareLabel} />
             </div>
           </section>
 

@@ -5,8 +5,6 @@ import "react-datepicker/dist/react-datepicker.css";
 
 import { phNow } from "@/lib/time";
 import {
-  calculateRouteFare,
-  formatRouteFare,
   resolveRouteEndpoints,
   type RouteStopPoint,
 } from "@/features/shared/utils/tripSchedulePreview";
@@ -58,7 +56,6 @@ export function DispatchTripModal({
   const [selectedRoute, setSelectedRoute] = useState("");
   const [departureTime, setDepartureTime] = useState<Date | null>(phNow());
   const [routeStops, setRouteStops] = useState<RouteStopPoint[]>([]);
-  const [farePreview, setFarePreview] = useState<number | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
   useEffect(() => {
@@ -69,14 +66,12 @@ export function DispatchTripModal({
     setSelectedRoute("");
     setDepartureTime(phNow());
     setRouteStops([]);
-    setFarePreview(null);
     setIsPreviewLoading(false);
   }, [open, vehicle?.id]);
 
   useEffect(() => {
     if (!open || !selectedRoute) {
       setRouteStops([]);
-      setFarePreview(null);
       setIsPreviewLoading(false);
       return;
     }
@@ -93,7 +88,6 @@ export function DispatchTripModal({
         }
 
         setRouteStops(stops);
-        setFarePreview(calculateRouteFare(stops));
       })
       .catch((error) => {
         console.error("Route preview load error:", error);
@@ -103,7 +97,6 @@ export function DispatchTripModal({
         }
 
         setRouteStops([]);
-        setFarePreview(null);
       })
       .finally(() => {
         if (active) {
@@ -151,12 +144,6 @@ export function DispatchTripModal({
         month: "short",
       })
     : "Select departure time";
-  const fareLabel = selectedRoute
-    ? isPreviewLoading
-      ? "Calculating..."
-      : formatRouteFare(farePreview)
-    : "Select route first";
-
   if (!open || !vehicle) {
     return null;
   }
@@ -263,10 +250,6 @@ export function DispatchTripModal({
             <PreviewField
               label="Time"
               value={departurePreview}
-            />
-            <PreviewField
-              label="Fare"
-              value={fareLabel}
             />
           </div>
 
