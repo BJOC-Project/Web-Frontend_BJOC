@@ -233,7 +233,7 @@ export function AdminRouteStopManagement() {
 
   function deleteRoute(id: string) {
     setConfirmTitle("Delete Route");
-    setConfirmMessage("Are you sure you want to delete this route? All stops will also be removed.");
+    setConfirmMessage("Are you sure you want to delete this route? All stops and completed trips will also be removed.");
     setConfirmButton("Delete");
     setConfirmColor("bg-red-600");
 
@@ -247,7 +247,20 @@ export function AdminRouteStopManagement() {
           setStops([]);
         }
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : "Failed to delete route.";
+        const axiosMessage =
+          error !== null &&
+          typeof error === "object" &&
+          "response" in error &&
+          error.response !== null &&
+          typeof error.response === "object" &&
+          "data" in error.response &&
+          error.response.data !== null &&
+          typeof error.response.data === "object" &&
+          "message" in error.response.data &&
+          typeof error.response.data.message === "string"
+            ? error.response.data.message
+            : null;
+        const errorMessage = axiosMessage ?? (error instanceof Error ? error.message : "Failed to delete route.");
         alert(errorMessage);
       }
     });

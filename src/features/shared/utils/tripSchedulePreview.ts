@@ -11,9 +11,6 @@ type RouteRecord = {
   start_location?: string | null;
 };
 
-const BASE_FARE = 15;
-const FARE_STEP_AMOUNT = 5;
-
 function toNumber(value: number | string | null | undefined) {
   if (typeof value === "number") {
     return Number.isFinite(value) ? value : null;
@@ -84,20 +81,6 @@ export function calculateRouteDistanceKm(stops: RouteStopPoint[]) {
   }
 
   return Number(totalDistance.toFixed(2));
-}
-
-export function calculateRouteFare(stops: RouteStopPoint[]) {
-  const distanceKm = calculateRouteDistanceKm(stops);
-  const roundedDistanceKm = Math.max(1, Math.ceil(Math.max(0, distanceKm)));
-  return BASE_FARE + Math.max(0, roundedDistanceKm - 1) * FARE_STEP_AMOUNT;
-}
-
-export function formatRouteFare(fare: number | null | undefined) {
-  if (typeof fare !== "number" || Number.isNaN(fare)) {
-    return "Unavailable";
-  }
-
-  return `PHP ${fare.toFixed(2)}`;
 }
 
 export function resolveRouteEndpoints(route: RouteRecord | null | undefined, stops: RouteStopPoint[] = []) {
