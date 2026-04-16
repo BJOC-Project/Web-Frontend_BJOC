@@ -108,14 +108,14 @@ export function AdminDriverVehicleOversight() {
   function deleteDriver(id: string) {
     confirm("Delete Driver", "Are you sure you want to delete this driver?", async () => {
       await driverService.deleteDriver(id);
-      void loadDrivers();
+      setDrivers((previous) => previous.filter((d) => d.id !== id));
     });
   }
 
   function deleteVehicle(id: string) {
     confirm("Delete Vehicle", "Are you sure you want to delete this vehicle?", async () => {
       await vehicleService.deleteVehicle(id);
-      void loadVehicles();
+      setVehicles((previous) => previous.filter((v) => v.id !== id));
     });
   }
 
