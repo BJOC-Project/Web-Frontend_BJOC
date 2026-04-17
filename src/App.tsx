@@ -20,6 +20,7 @@ const AdminReportsHistory = lazy(() => import("@/features/pages/Admin").then((mo
 const AdminSystemSettings = lazy(() => import("@/features/pages/Admin").then((module) => ({ default: module.AdminSystemSettings })));
 const AlertHistoryPage = lazy(() => import("@/features/pages/Notification").then((module) => ({ default: module.AlertHistoryPage })));
 const NotificationHistoryPage = lazy(() => import("@/features/pages/Notification").then((module) => ({ default: module.NotificationHistoryPage })));
+const PrivacyPolicy = lazy(() => import("@/features/pages/PrivacyPolicy"));
 
 function RouteLoader() {
   return (
@@ -43,6 +44,10 @@ function withSuspense(element: ReactNode) {
 }
 
 const router = createBrowserRouter([
+  {
+    path: "/privacy",
+    element: withSuspense(<PrivacyPolicy />),
+  },
   {
     path: "/login",
     element: withSuspense(<LoginPage />),
