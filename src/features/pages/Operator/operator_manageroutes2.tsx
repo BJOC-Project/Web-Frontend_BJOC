@@ -204,9 +204,9 @@ export function OperatorManageRoutes2() {
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <InfoPill icon={<Route size={16} />} label="Routes" value={routes.length} />
-            <InfoPill icon={<MapPin size={16} />} label="Stops" value={stops.length} />
-            <InfoPill icon={<PencilLine size={16} />} label="Mode" value={editingId ? "Editing" : "Adding"} />
+            <InfoPill label="Routes" value={routes.length} />
+            <InfoPill label="Stops" value={stops.length} />
+            <InfoPill label="Mode" value={editingId ? "Editing" : "Adding"} />
           </div>
         </div>
       </section>
@@ -440,21 +440,15 @@ export function OperatorManageRoutes2() {
 }
 
 type InfoPillProps = {
-  icon: ReactNode;
   label: string;
   value: number | string;
 };
 
-function InfoPill({ icon, label, value }: InfoPillProps) {
+function InfoPill({ label, value }: InfoPillProps) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{label}</p>
-          <p className="mt-2 truncate text-lg font-semibold text-slate-900">{value}</p>
-        </div>
-        <div className="shrink-0 rounded-2xl bg-blue-100 p-3 text-blue-700">{icon}</div>
-      </div>
+      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{label}</p>
+      <p className="mt-2 truncate text-lg font-semibold text-slate-900">{value}</p>
     </div>
   );
 }

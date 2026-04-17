@@ -347,9 +347,9 @@ export function OperatorTrips() {
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <TopStat icon={<Route size={18} />} label="Routes" value={routes.length} />
-            <TopStat icon={<CarFront size={18} />} label="Ready Vehicles" value={readyVehicles} />
-            <TopStat icon={<UserRound size={18} />} label="Drivers" value={availableDrivers} />
+            <TopStat label="Routes" value={routes.length} />
+            <TopStat label="Ready Vehicles" value={readyVehicles} />
+            <TopStat label="Drivers" value={availableDrivers} />
           </div>
         </div>
       </section>
@@ -679,21 +679,15 @@ export function OperatorTrips() {
 }
 
 type TopStatProps = {
-  icon: ReactNode;
   label: string;
   value: number;
 };
 
-function TopStat({ icon, label, value }: TopStatProps) {
+function TopStat({ label, value }: TopStatProps) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm text-slate-500">{label}</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-900">{value}</p>
-        </div>
-        <div className="shrink-0 rounded-2xl bg-sky-100 p-3 text-sky-700">{icon}</div>
-      </div>
+      <p className="text-sm text-slate-500">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-slate-900">{value}</p>
     </div>
   );
 }

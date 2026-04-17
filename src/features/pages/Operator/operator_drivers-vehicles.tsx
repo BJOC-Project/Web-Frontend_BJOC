@@ -76,9 +76,9 @@ export function OperatorDriversVehicles() {
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <StatChip icon={<Bus size={16} />} label="Vehicles" value={summary.total} />
-            <StatChip icon={<UserSquare2 size={16} />} label="Assigned" value={summary.withDriver} />
-            <StatChip icon={<Bus size={16} />} label="Driving" value={summary.driving} />
+            <StatChip label="Vehicles" value={summary.total} />
+            <StatChip label="Assigned" value={summary.withDriver} />
+            <StatChip label="Driving" value={summary.driving} />
           </div>
         </div>
       </section>
@@ -212,21 +212,15 @@ export function OperatorDriversVehicles() {
 }
 
 type StatChipProps = {
-  icon: ReactNode;
   label: string;
   value: number;
 };
 
-function StatChip({ icon, label, value }: StatChipProps) {
+function StatChip({ label, value }: StatChipProps) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{label}</p>
-          <p className="mt-2 text-xl font-semibold text-slate-900">{value}</p>
-        </div>
-        <div className="rounded-2xl bg-sky-100 p-3 text-sky-700">{icon}</div>
-      </div>
+      <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{label}</p>
+      <p className="mt-2 text-xl font-semibold text-slate-900">{value}</p>
     </div>
   );
 }
