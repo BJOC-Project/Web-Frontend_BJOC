@@ -61,25 +61,23 @@ export function OperatorDriversVehicles() {
   return (
     <div className="space-y-5">
       <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700/60">
-              Staff Fleet Directory
-            </p>
-            <h1 className="mt-2 text-2xl font-semibold text-slate-900 sm:text-3xl">
-              Vehicles & Drivers
-            </h1>
-            <p className="mt-2 text-sm text-slate-500 sm:text-base">
-              Review vehicle status, route assignments, driver coverage, and recent updates across
-              the fleet on any screen size.
-            </p>
-          </div>
+        <div className="max-w-3xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700/60">
+            Staff Fleet Directory
+          </p>
+          <h1 className="mt-2 text-2xl font-semibold text-slate-900 sm:text-3xl">
+            Vehicles & Drivers
+          </h1>
+          <p className="mt-2 text-sm text-slate-500 sm:text-base">
+            Review vehicle status, route assignments, driver coverage, and recent updates across
+            the fleet on any screen size.
+          </p>
+        </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <StatChip label="Vehicles" value={summary.total} />
-            <StatChip label="Assigned" value={summary.withDriver} />
-            <StatChip label="Driving" value={summary.driving} />
-          </div>
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <StatChip label="Vehicles" value={summary.total} />
+          <StatChip label="Assigned" value={summary.withDriver} />
+          <StatChip label="Driving" value={summary.driving} />
         </div>
       </section>
 
