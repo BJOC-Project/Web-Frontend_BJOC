@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { CalendarClock, Route, TimerReset } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 interface EnrichedVehicle {
@@ -160,8 +159,7 @@ export function AdminTrips() {
   return (
     <div className="space-y-5">
       <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div className="max-w-3xl">
+        <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700/60">
               Trip Operations
             </p>
@@ -174,16 +172,11 @@ export function AdminTrips() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <TripsStat
-              icon={<CalendarClock size={18} />}
-              label="Scheduled / Active"
-              value={activeTrips.length}
-            />
-            <TripsStat icon={<Route size={18} />} label="Vehicles" value={vehicles.length} />
-            <TripsStat icon={<TimerReset size={18} />} label="Trip history" value={history.length} />
+          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <TripsStat label="Scheduled / Active" value={activeTrips.length} />
+            <TripsStat label="Vehicles" value={vehicles.length} />
+            <TripsStat label="Trip history" value={history.length} />
           </div>
-        </div>
       </section>
 
       <section className="space-y-3 rounded-[26px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -307,21 +300,15 @@ export function AdminTrips() {
 }
 
 type TripsStatProps = {
-  icon: ReactNode;
   label: string;
   value: number;
 };
 
-function TripsStat({ icon, label, value }: TripsStatProps) {
+function TripsStat({ label, value }: TripsStatProps) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-sm text-slate-500">{label}</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-900">{value}</p>
-        </div>
-        <div className="rounded-2xl bg-emerald-100 p-3 text-emerald-700">{icon}</div>
-      </div>
+    <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4 shadow-sm">
+      <p className="text-sm text-slate-500">{label}</p>
+      <p className="mt-2 text-3xl font-semibold text-slate-900">{value}</p>
     </div>
   );
 }

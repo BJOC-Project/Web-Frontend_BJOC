@@ -340,8 +340,7 @@ export function AdminRouteStopManagement() {
   return (
     <div className="space-y-5">
       <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-          <div className="max-w-3xl">
+        <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700/60">
               Route Builder
             </p>
@@ -354,12 +353,11 @@ export function AdminRouteStopManagement() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <StatPill label="Routes" value={routes.length} />
             <StatPill label="Stops" value={stops.length} />
             <StatPill label="Tracked vehicles" value={vehicleLocations.length} />
           </div>
-        </div>
       </section>
 
       <div className="grid grid-cols-1 gap-4 2xl:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.6fr)]">
@@ -786,9 +784,9 @@ type StatPillProps = {
 
 function StatPill({ label, value }: StatPillProps) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+    <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4 shadow-sm">
       <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-semibold text-slate-900">{value}</p>
+      <p className="mt-2 text-3xl font-semibold text-slate-900">{value}</p>
     </div>
   );
 }
