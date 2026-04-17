@@ -76,9 +76,9 @@ export function OperatorDriversVehicles() {
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            <StatChip accentClass="bg-sky-100 text-sky-700" icon={<Bus size={18} />} label="Vehicles" value={summary.total} />
-            <StatChip accentClass="bg-amber-100 text-amber-700" icon={<UserSquare2 size={18} />} label="Assigned" value={summary.withDriver} />
-            <StatChip accentClass="bg-emerald-100 text-emerald-700" icon={<Bus size={18} />} label="Driving" value={summary.driving} />
+            <StatChip label="Vehicles" value={summary.total} />
+            <StatChip label="Assigned" value={summary.withDriver} />
+            <StatChip label="Driving" value={summary.driving} />
           </div>
         </div>
       </section>
@@ -212,22 +212,15 @@ export function OperatorDriversVehicles() {
 }
 
 type StatChipProps = {
-  accentClass: string;
-  icon: ReactNode;
   label: string;
   value: number;
 };
 
-function StatChip({ accentClass, icon, label, value }: StatChipProps) {
+function StatChip({ label, value }: StatChipProps) {
   return (
     <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm text-slate-500">{label}</p>
-          <p className="mt-2 text-3xl font-semibold text-slate-900">{value}</p>
-        </div>
-        <div className={`shrink-0 rounded-2xl p-3 ${accentClass}`}>{icon}</div>
-      </div>
+      <p className="text-sm text-slate-500">{label}</p>
+      <p className="mt-2 text-3xl font-semibold text-slate-900">{value}</p>
     </div>
   );
 }

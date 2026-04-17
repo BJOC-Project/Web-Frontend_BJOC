@@ -347,9 +347,9 @@ export function OperatorTrips() {
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <TopStat accentClass="bg-sky-100 text-sky-700" icon={<Route size={18} />} label="Routes" value={routes.length} />
-            <TopStat accentClass="bg-emerald-100 text-emerald-700" icon={<CarFront size={18} />} label="Ready Vehicles" value={readyVehicles} />
-            <TopStat accentClass="bg-violet-100 text-violet-700" icon={<UserRound size={18} />} label="Drivers" value={availableDrivers} />
+            <TopStat label="Routes" value={routes.length} />
+            <TopStat label="Ready Vehicles" value={readyVehicles} />
+            <TopStat label="Drivers" value={availableDrivers} />
           </div>
         </div>
       </section>
@@ -679,22 +679,15 @@ export function OperatorTrips() {
 }
 
 type TopStatProps = {
-  accentClass: string;
-  icon: ReactNode;
   label: string;
   value: number;
 };
 
-function TopStat({ accentClass, icon, label, value }: TopStatProps) {
+function TopStat({ label, value }: TopStatProps) {
   return (
     <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm text-slate-500">{label}</p>
-          <p className="mt-2 text-3xl font-semibold text-slate-900">{value}</p>
-        </div>
-        <div className={`shrink-0 rounded-2xl p-3 ${accentClass}`}>{icon}</div>
-      </div>
+      <p className="text-sm text-slate-500">{label}</p>
+      <p className="mt-2 text-3xl font-semibold text-slate-900">{value}</p>
     </div>
   );
 }

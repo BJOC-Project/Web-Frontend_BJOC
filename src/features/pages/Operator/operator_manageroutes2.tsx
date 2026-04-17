@@ -204,9 +204,9 @@ export function OperatorManageRoutes2() {
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <InfoPill accentClass="bg-sky-100 text-sky-700" icon={<Route size={18} />} label="Routes" value={routes.length} />
-            <InfoPill accentClass="bg-emerald-100 text-emerald-700" icon={<MapPin size={18} />} label="Stops" value={stops.length} />
-            <InfoPill accentClass="bg-violet-100 text-violet-700" icon={<PencilLine size={18} />} label="Mode" value={editingId ? "Editing" : "Adding"} />
+            <InfoPill label="Routes" value={routes.length} />
+            <InfoPill label="Stops" value={stops.length} />
+            <InfoPill label="Mode" value={editingId ? "Editing" : "Adding"} />
           </div>
         </div>
       </section>
@@ -440,22 +440,15 @@ export function OperatorManageRoutes2() {
 }
 
 type InfoPillProps = {
-  accentClass: string;
-  icon: ReactNode;
   label: string;
   value: number | string;
 };
 
-function InfoPill({ accentClass, icon, label, value }: InfoPillProps) {
+function InfoPill({ label, value }: InfoPillProps) {
   return (
     <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm text-slate-500">{label}</p>
-          <p className="mt-2 truncate text-3xl font-semibold text-slate-900">{value}</p>
-        </div>
-        <div className={`shrink-0 rounded-2xl p-3 ${accentClass}`}>{icon}</div>
-      </div>
+      <p className="text-sm text-slate-500">{label}</p>
+      <p className="mt-2 truncate text-3xl font-semibold text-slate-900">{value}</p>
     </div>
   );
 }
