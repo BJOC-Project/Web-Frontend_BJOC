@@ -103,9 +103,10 @@ export function AdminSystemSettings() {
       });
       setFeedback(null);
 
-      // Fetch stop counts for cost preview (best-effort — don't block on failure)
+      // Fetch stop counts for cost preview — only active routes generate Mapbox calls
+      const activeRoutes = routes.filter((r) => r.is_active);
       const stopsByRoute = await Promise.all(
-        routes.map((r) =>
+        activeRoutes.map((r) =>
           stopsService.getStopsByRoute(r.id).then((stops) => ({
             routeName: r.route_name,
             segments: Math.max(0, stops.length - 1),

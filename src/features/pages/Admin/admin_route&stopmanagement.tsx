@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Map, MapPin, MoreVertical, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Map, MapPin, MoreVertical, Pencil, Plus, Power, Trash2, X } from "lucide-react";
 import SharedMap from "@/features/shared/components/layout/SharedMap";
 import StopsTable, { type Stop as RouteStop } from "@/features/shared/components/layout/StopsTable";
 import { useLoading } from "@/features/shared/context/LoadingContext";
@@ -11,6 +11,7 @@ import { vehicleService } from "./services/vehicleService";
 type Route = {
   end_location?: string;
   id: string;
+  is_active: boolean;
   route_name: string;
   start_location?: string;
 };
@@ -268,6 +269,31 @@ export function AdminRouteStopManagement() {
     setShowActionConfirm(true);
   }
 
+  function toggleRoute(route: Route) {
+    const activating = !route.is_active;
+
+    setConfirmTitle(activating ? "Activate Route" : "Deactivate Route");
+    setConfirmMessage(
+      activating
+        ? "This route will become visible to passengers and available for new bookings."
+        : "Deactivating this route will hide it from passengers and stop new bookings. Existing trips in progress will not be affected.",
+    );
+    setConfirmButton(activating ? "Activate" : "Deactivate");
+    setConfirmColor(activating ? "bg-green-600" : "bg-red-600");
+
+    setConfirmAction(() => async () => {
+      const updatedRoutes = await routesService.toggleRouteStatus(route.id, activating);
+      setRoutes(updatedRoutes ?? []);
+
+      if (selectedRoute?.id === route.id) {
+        const updated = updatedRoutes?.find((r) => r.id === route.id);
+        if (updated) setSelectedRoute(updated);
+      }
+    });
+
+    setShowActionConfirm(true);
+  }
+
   function editRoute(route: Route) {
     setEditingRouteId(route.id);
     setRouteForm({
@@ -353,8 +379,9 @@ export function AdminRouteStopManagement() {
             </p>
           </div>
 
-          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <StatPill label="Routes" value={routes.length} />
+          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-4">
+            <StatPill label="Total Routes" value={routes.length} />
+            <StatPill label="Active Routes" value={routes.filter((r) => r.is_active).length} />
             <StatPill label="Stops" value={stops.length} />
             <StatPill label="Tracked vehicles" value={vehicleLocations.length} />
           </div>
@@ -391,7 +418,18 @@ export function AdminRouteStopManagement() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <h2 className="font-semibold text-slate-900">{route.route_name}</h2>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="font-semibold text-slate-900">{route.route_name}</h2>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                          route.is_active
+                            ? "bg-green-100 text-green-700"
+                            : "bg-slate-100 text-slate-500"
+                        }`}
+                      >
+                        {route.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </div>
                     <div className="mt-1 text-sm text-slate-500">
                       {route.start_location} {"->"} {route.end_location}
                     </div>
@@ -424,7 +462,7 @@ export function AdminRouteStopManagement() {
                       </button>
 
                       {routeMenuOpen === route.id && (
-                        <div className="absolute right-0 z-10 mt-2 w-40 rounded-2xl border border-slate-200 bg-white p-1 shadow-lg">
+                        <div className="absolute right-0 z-10 mt-2 w-44 rounded-2xl border border-slate-200 bg-white p-1 shadow-lg">
                           <button
                             className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-100"
                             onClick={(event) => {
@@ -436,6 +474,23 @@ export function AdminRouteStopManagement() {
                           >
                             <Pencil size={14} />
                             Edit
+                          </button>
+
+                          <button
+                            className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm transition ${
+                              route.is_active
+                                ? "text-red-600 hover:bg-red-50"
+                                : "text-green-600 hover:bg-green-50"
+                            }`}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              toggleRoute(route);
+                              setRouteMenuOpen(null);
+                            }}
+                            type="button"
+                          >
+                            <Power size={14} />
+                            {route.is_active ? "Deactivate" : "Activate"}
                           </button>
 
                           <button

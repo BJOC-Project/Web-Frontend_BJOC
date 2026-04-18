@@ -8,6 +8,7 @@ export type Route = {
   end_location?: string;
   start_lat?: number;
   start_lng?: number;
+  is_active: boolean;
 };
 
 export const routesService = {
@@ -61,6 +62,14 @@ export const routesService = {
 
     return extractApiData<{ success: boolean; published_version: number }>(res.data);
 
-  }
+  },
+
+  async toggleRouteStatus(id: string, is_active: boolean): Promise<Route[]> {
+
+    const res = await api.patch(`/routes/${id}/status`, { is_active });
+
+    return extractApiData<Route[]>(res.data) ?? [];
+
+  },
 
 };
