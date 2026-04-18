@@ -2,12 +2,13 @@ import type { FC } from "react";
 
 type Vehicle = {
   id: string;
-  plate_number: string;
+  plate_number?: string | null;
   driver?: string | null;
-  capacity?: number;
-  trips_today?: number;
-  scheduled?: boolean;
-  ongoing?: boolean;
+  capacity?: number | null;
+  trips_today: number;
+  scheduled: boolean;
+  ongoing: boolean;
+  available: boolean;
 };
 
 type Props = {

@@ -56,7 +56,7 @@ export function DispatchTripModal({
   const [selectedRoute, setSelectedRoute] = useState("");
   const [departureTime, setDepartureTime] = useState<Date | null>(phNow());
   const [routeStops, setRouteStops] = useState<RouteStopPoint[]>([]);
-  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [, setIsPreviewLoading] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -153,6 +153,9 @@ export function DispatchTripModal({
     : "Schedule conflicts are checked when you submit the trip.";
 
   async function scheduleTrip() {
+    if (!vehicle) {
+      return;
+    }
     if (vehicle.ongoing) {
       alert("This vehicle already has an active trip.");
       return;

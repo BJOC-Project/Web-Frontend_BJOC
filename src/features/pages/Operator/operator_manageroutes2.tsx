@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Crosshair, MapPin, PencilLine, Route, Save, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Crosshair, PencilLine, Save, Trash2 } from "lucide-react";
 
 import SharedMap from "@/features/shared/components/layout/SharedMap";
 import {

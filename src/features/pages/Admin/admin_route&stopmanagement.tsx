@@ -81,11 +81,20 @@ export function AdminRouteStopManagement() {
   async function loadStops(routeId: string) {
     const data = await stopsService.getStopsByRoute(routeId);
 
-    const formatted = data.map((stop) => ({
-      id: stop.id,
+    const toNum = (v: number | string | null | undefined) => {
+      if (typeof v === "number") return Number.isFinite(v) ? v : null;
+      if (typeof v === "string" && v.trim()) {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : null;
+      }
+      return null;
+    };
+
+    const formatted: RouteStop[] = data.map((stop) => ({
+      id: stop.id ?? "",
       is_active: stop.is_active,
-      latitude: stop.latitude,
-      longitude: stop.longitude,
+      latitude: toNum(stop.latitude),
+      longitude: toNum(stop.longitude),
       name: stop.stop_name,
     }));
 

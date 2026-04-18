@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { CalendarClock, CarFront, Route, UserRound } from "lucide-react";
+import { CalendarClock } from "lucide-react";
 
 import { phNow, phTime } from "@/lib/time";
 import {
@@ -92,7 +92,7 @@ export function OperatorTrips() {
   const [departureTime, setDepartureTime] = useState<Date | null>(phNow());
   const [routeStops, setRouteStops] = useState<RouteStopPoint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [, setIsPreviewLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function loadData() {

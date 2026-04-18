@@ -1,4 +1,6 @@
 export type RouteStopPoint = {
+  id?: string;
+  is_active?: boolean;
   latitude?: number | string | null;
   longitude?: number | string | null;
   stop_order?: number | null;
