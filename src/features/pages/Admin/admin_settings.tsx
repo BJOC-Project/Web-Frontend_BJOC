@@ -437,7 +437,7 @@ export function AdminSystemSettings() {
               </p>
               {settings.mapbox_calls_month_key && (
                 <p className="mt-1 text-xs text-slate-400">
-                  Resets on 1 {new Date(settings.mapbox_calls_month_key + "-01").toLocaleString(undefined, { month: "long", year: "numeric" }).replace(/\d+\s/, "")}
+                  Resets on 1 {(() => { const d = new Date(settings.mapbox_calls_month_key + "-01T00:00:00Z"); d.setUTCMonth(d.getUTCMonth() + 1); return d.toLocaleString(undefined, { month: "long", year: "numeric" }).replace(/\d+\s/, ""); })()}
                 </p>
               )}
             </div>
