@@ -1,4 +1,4 @@
-import { Pencil, Trash2, UserPlus } from "lucide-react";
+import { Pencil, Trash2, UserMinus, UserPlus } from "lucide-react";
 import type { Driver, Vehicle } from "@/features";
 
 type Props = {
@@ -7,6 +7,7 @@ type Props = {
   onEdit: () => void;
   onDelete: () => void;
   onAssign: () => void;
+  onUnassign: () => void;
 };
 
 export function VehicleCard({
@@ -14,7 +15,8 @@ export function VehicleCard({
   drivers,
   onEdit,
   onDelete,
-  onAssign
+  onAssign,
+  onUnassign,
 }: Props) {
 
   const driver = drivers.find(d => d.id === vehicle.driver_id);
@@ -60,9 +62,20 @@ export function VehicleCard({
           <button
             onClick={onAssign}
             className="p-1.5 rounded hover:bg-blue-50 text-blue-600"
+            title="Assign driver"
           >
             <UserPlus size={14} />
           </button>
+
+          {driver && (
+            <button
+              onClick={onUnassign}
+              className="p-1.5 rounded hover:bg-orange-50 text-orange-500"
+              title="Unassign driver"
+            >
+              <UserMinus size={14} />
+            </button>
+          )}
 
           <button
             onClick={onEdit}

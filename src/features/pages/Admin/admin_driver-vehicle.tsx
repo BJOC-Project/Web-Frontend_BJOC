@@ -144,13 +144,41 @@ export function AdminDriverVehicleOversight() {
   }
 
   async function assignDriver() {
-    await vehicleService.updateVehicle(assignForm.vehicle_id, {
-      driver_id: assignForm.driver_id,
-    });
+    try {
+      await vehicleService.updateVehicle(assignForm.vehicle_id, {
+        driver_id: assignForm.driver_id,
+      });
+      setAssignForm({ driver_id: "", vehicle_id: "" });
+      setShowAssignModal(false);
+      void loadVehicles();
+    } catch (error) {
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      if (status === 409) {
+        const { vehicle_id, driver_id } = assignForm;
+        setShowAssignModal(false);
+        confirm(
+          "Already Assigned",
+          "This vehicle already has a driver. Unassign the current driver and reassign to the new one?",
+          async () => {
+            await vehicleService.updateVehicle(vehicle_id, { driver_id: null });
+            await vehicleService.updateVehicle(vehicle_id, { driver_id });
+            setAssignForm({ driver_id: "", vehicle_id: "" });
+            void loadVehicles();
+          },
+        );
+      }
+    }
+  }
 
-    setAssignForm({ driver_id: "", vehicle_id: "" });
-    setShowAssignModal(false);
-    void loadVehicles();
+  function unassignDriver(vehicleId: string) {
+    confirm(
+      "Unassign Driver",
+      "Remove the assigned driver from this vehicle?",
+      async () => {
+        await vehicleService.updateVehicle(vehicleId, { driver_id: null });
+        void loadVehicles();
+      },
+    );
   }
 
   return (
@@ -281,6 +309,7 @@ export function AdminDriverVehicleOversight() {
                   });
                   setShowVehicleModal(true);
                 }}
+                onUnassign={() => unassignDriver(vehicle.id)}
                 vehicle={vehicle}
               />
             ))}
